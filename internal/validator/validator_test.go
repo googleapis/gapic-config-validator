@@ -23,11 +23,33 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/builder"
 
 	"github.com/googleapis/gapic-config-validator/internal/validator/testdata"
 )
+
+func TestValidate(t *testing.T) {
+	msg, err := desc.LoadMessageDescriptorForMessage(&testdata.Msg{})
+	if err != nil {
+		t.Error(err)
+	}
+
+	req := &plugin.CodeGeneratorRequest{
+		ProtoFile:      []*descriptor.FileDescriptorProto{msg.GetFile().AsFileDescriptorProto()},
+		FileToGenerate: []string{"basic_test.proto"},
+	}
+
+	res, err := Validate(req)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if res.GetError() != "" {
+		t.Errorf("Validate: received unexpected error(s) %s", res.GetError())
+	}
+}
 
 func TestValidateFile(t *testing.T) {
 	var v validator
