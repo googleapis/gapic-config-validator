@@ -18,6 +18,7 @@ error message conformance testing.
 
 Installation
 ------------
+
 To use the plugin, [protoc](https://developers.google.com/protocol-buffers/docs/downloads) must be installed. 
 
 #### Download release binary
@@ -45,6 +46,7 @@ To use the plugin, [protoc](https://developers.google.com/protocol-buffers/docs/
 
 Invocation
 ----------
+
 `protoc -I $COMMON_PROTO -I . --gapic-validator_out=. a.proto b.proto`
 
 The `$COMMON_PROTO` variable represents a path to the [googleapis/api-common-protos](https://github.com/googleapis/api-common-protos) directory to import the configuration annotations.
@@ -73,3 +75,8 @@ Some tests require more well-defined descriptors than it makes sense to define b
 The [internal/validator/testdata](/internal/validator/testdata) directory contains protos and their generated types that are used in tests.
 
 Should a change be made to the protos in this directory, the generated types need to be regenerated via `make gen-testdata`. You will need the aforementioned `$COMMON_PROTO` set properly.
+
+Disclaimer
+----------
+
+This is not an official Google product.
