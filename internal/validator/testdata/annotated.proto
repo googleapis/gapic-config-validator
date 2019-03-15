@@ -45,5 +45,13 @@ message Baz {
 
 message Biz {
   string d = 1 [(google.api.resource_reference) = "Buz"];
+
+  string e = 2 [(google.api.resource_reference) = "Qux"];
+}
+
+message Qux {
+  string req = 1 [(google.api.resource_reference) = "Foo"];
+
+  string e = 2 [(google.api.resource).pattern = ""];
 }
 

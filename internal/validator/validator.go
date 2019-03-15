@@ -44,6 +44,7 @@ const (
 
 	// resource reslated errors
 	resRefNotValidMessage = "unable to resolve resource reference for field %v: value %v is not a valid message"
+	resRefNotAnnotated    = "unable to resolve resource reference for field %v: field %v is not annotated as a resource"
 )
 
 // Validate ensures that the given input protos have valid
@@ -213,8 +214,17 @@ func (v *validator) validateMessage(msg *desc.MessageDescriptor) error {
 	for _, field := range msg.GetFields() {
 		// validate resource reference
 		if eRef, err := proto.GetExtension(field.GetFieldOptions(), annotations.E_ResourceReference); err == nil {
-			if ref := v.resolveReference(*eRef.(*string), msg.GetFile()); ref == nil {
-				v.addError(resRefNotValidMessage, field.GetFullyQualifiedName(), *eRef.(*string))
+			refName := *eRef.(*string)
+
+			// unresolvable resource reference message
+			if refMsg := v.resolveReference(refName, msg.GetFile()); refMsg == nil {
+				v.addError(resRefNotValidMessage, field.GetFullyQualifiedName(), refName)
+			} else {
+				// field referenced is not annotated or is annotated improperly as a resource
+				eRef, err := proto.GetExtension(refMsg.FindFieldByName(field.GetName()).GetFieldOptions(), annotations.E_Resource)
+				if err != nil || (eRef.(*annotations.Resource)).Pattern == "" {
+					v.addError(resRefNotAnnotated, field.GetFullyQualifiedName(), refMsg.GetFullyQualifiedName()+"."+field.GetName())
+				}
 			}
 		}
 	}

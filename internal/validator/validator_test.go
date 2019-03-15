@@ -338,6 +338,11 @@ func TestValidateMessage(t *testing.T) {
 		t.Error(err)
 	}
 
+	quxDesc, err := desc.LoadMessageDescriptorForMessage(&testdata.Qux{})
+	if err != nil {
+		t.Error(err)
+	}
+
 	v.files = map[string]*desc.FileDescriptor{"annotated_test.proto": barDesc.GetFile()}
 
 	for _, tst := range []struct {
@@ -345,8 +350,9 @@ func TestValidateMessage(t *testing.T) {
 		msg        *desc.MessageDescriptor
 	}{
 		{name: "valid top-level reference", want: "", msg: barDesc},
-		{name: "unresolvable top-lvl resource ref", want: fmt.Sprintf(resRefNotValidMessage, "annotated.Biz.d", "Buz"), msg: bizDesc},
+		{name: "unresolvable top-lvl resource ref & not annotated, empty", want: fmt.Sprintf(resRefNotValidMessage+"; "+resRefNotAnnotated, "annotated.Biz.d", "Buz", "annotated.Biz.e", "annotated.Qux.e"), msg: bizDesc},
 		{name: "unresolvable top-lvl resource ref, empty", want: fmt.Sprintf(resRefNotValidMessage, "annotated.Baz.c", ""), msg: bazDesc},
+		{name: "resource ref field not annotated", want: fmt.Sprintf(resRefNotAnnotated, "annotated.Qux.req", "annotated.Foo.req"), msg: quxDesc},
 	} {
 		if err := v.validateMessage(tst.msg); err != nil {
 			t.Error(err)
