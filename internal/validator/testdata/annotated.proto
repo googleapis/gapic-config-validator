@@ -15,13 +15,14 @@
 syntax = "proto3";
 
 import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
 
-package signature;
+package annotated;
 
 option go_package = "github.com/googleapis/gapic-config-validator/internal/validator/testdata;testdata";
 
 message Foo {
-  string a = 1;
+  string a = 1 [(google.api.resource).pattern = "projects/{project}/foo/{foo}"];
 
   Bar bar = 2;
 
@@ -32,15 +33,17 @@ message Bar {
   string b = 1 [(google.api.field_behavior) = OPTIONAL];
 
   Baz baz = 2;
+
+  string a = 3 [(google.api.resource_reference) = "Foo"];
 }
 
 message Baz {
-  string c = 1;
+  string c = 1 [(google.api.resource_reference) = ""];
 
   repeated Biz biz = 2;
 }
 
 message Biz {
-  string d = 1;
+  string d = 1 [(google.api.resource_reference) = "Buz"];
 }
 

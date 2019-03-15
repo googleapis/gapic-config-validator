@@ -319,3 +319,44 @@ func TestValidateMethod_MethodSignature(t *testing.T) {
 		v.resp.Error = nil
 	}
 }
+
+func TestValidateMessage(t *testing.T) {
+	var v validator
+
+	barDesc, err := desc.LoadMessageDescriptorForMessage(&testdata.Bar{})
+	if err != nil {
+		t.Error(err)
+	}
+
+	bazDesc, err := desc.LoadMessageDescriptorForMessage(&testdata.Baz{})
+	if err != nil {
+		t.Error(err)
+	}
+
+	bizDesc, err := desc.LoadMessageDescriptorForMessage(&testdata.Biz{})
+	if err != nil {
+		t.Error(err)
+	}
+
+	v.files = map[string]*desc.FileDescriptor{"annotated_test.proto": barDesc.GetFile()}
+
+	for _, tst := range []struct {
+		name, want string
+		msg        *desc.MessageDescriptor
+	}{
+		{name: "valid top-level reference", want: "", msg: barDesc},
+		{name: "unresolvable top-lvl resource ref", want: fmt.Sprintf(resRefNotValidMessage, "annotated.Biz.d", "Buz"), msg: bizDesc},
+		{name: "unresolvable top-lvl resource ref, empty", want: fmt.Sprintf(resRefNotValidMessage, "annotated.Baz.c", ""), msg: bazDesc},
+	} {
+		if err := v.validateMessage(tst.msg); err != nil {
+			t.Error(err)
+		}
+
+		if actual := v.resp.GetError(); actual != tst.want {
+			t.Errorf("%s: got(%s) want(%s)", tst.name, actual, tst.want)
+		}
+
+		// reset resp.Error field between tests
+		v.resp.Error = nil
+	}
+}

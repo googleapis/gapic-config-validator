@@ -41,6 +41,9 @@ const (
 	fieldDNE               = "field %v listed in rpc %v method signature entry (%v) does not exist in %v"
 	requiredAfterOptional  = "rpc %v method signature entry (%v) lists required field %v after an optional field"
 	fieldComponentRepeated = "rpc %v method signature entry field %v cannot be a field within a repeated field"
+
+	// resource reslated errors
+	resRefNotValidMessage = "unable to resolve resource reference for field %v: value %v is not a valid message"
 )
 
 // Validate ensures that the given input protos have valid
@@ -87,6 +90,11 @@ func (v *validator) validate(file *desc.FileDescriptor) error {
 	}
 
 	// validate Messages
+	for _, msg := range file.GetMessageTypes() {
+		if err := v.validateMessage(msg); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -128,13 +136,13 @@ func (v *validator) validateMethod(method *desc.MethodDescriptor) error {
 
 			if res := lro.GetResponseType(); res == "" {
 				v.addError(missingLROResponseType, mFQN)
-			} else if msg := v.resolveLROType(res, method.GetFile()); msg == nil {
+			} else if msg := v.resolveReference(res, method.GetFile()); msg == nil {
 				v.addError(unresolvableLROResponseType, res, mFQN)
 			}
 
 			if meta := lro.GetMetadataType(); meta == "" {
 				v.addError(missingLROMetadataType, mFQN)
-			} else if msg := v.resolveLROType(meta, method.GetFile()); msg == nil {
+			} else if msg := v.resolveReference(meta, method.GetFile()); msg == nil {
 				v.addError(unresolvableLROMetadataType, meta, mFQN)
 			}
 		}
@@ -201,6 +209,19 @@ func (v *validator) validateMethod(method *desc.MethodDescriptor) error {
 	return nil
 }
 
+func (v *validator) validateMessage(msg *desc.MessageDescriptor) error {
+	for _, field := range msg.GetFields() {
+		// validate resource reference
+		if eRef, err := proto.GetExtension(field.GetFieldOptions(), annotations.E_ResourceReference); err == nil {
+			if ref := v.resolveReference(*eRef.(*string), msg.GetFile()); ref == nil {
+				v.addError(resRefNotValidMessage, field.GetFullyQualifiedName(), *eRef.(*string))
+			}
+		}
+	}
+
+	return nil
+}
+
 // addError adds the given validation error to the plugin response
 // error field. If the response error field already exists, the new error
 // is concatenated with a semicolon.
@@ -216,9 +237,13 @@ func (v *validator) addError(err string, info ...interface{}) {
 	v.resp.Error = proto.String(err)
 }
 
-// resolveLROType finds the MessageDescriptor for a fully qualified name
+// resolveReference finds the MessageDescriptor for a fully qualified name
 // of an operation_info.response_type or operation_info.metadata_type.
-func (v *validator) resolveLROType(name string, file *desc.FileDescriptor) *desc.MessageDescriptor {
+func (v *validator) resolveReference(name string, file *desc.FileDescriptor) *desc.MessageDescriptor {
+	if name == "" {
+		return nil
+	}
+
 	// not a fully qualified name, make it one and check in parent file
 	if !strings.Contains(name, ".") {
 		msg := file.FindMessage(file.GetPackage() + "." + name)
