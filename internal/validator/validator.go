@@ -106,7 +106,7 @@ func (v *validator) validateService(serv *desc.ServiceDescriptor) error {
 	// validate google.api.default_host
 	if opts := serv.GetServiceOptions(); opts == nil {
 		v.addError(missingDefaultHost, serv.GetFullyQualifiedName())
-	} else if eHost, err := proto.GetExtension(opts, annotations.E_DefaultHost); err != nil {
+	} else if eHost, err := ext(opts, annotations.E_DefaultHost); err != nil {
 		v.addError(missingDefaultHost, serv.GetFullyQualifiedName())
 	} else if host := *eHost.(*string); host == "" {
 		v.addError(emptyDefaultHost, serv.GetFullyQualifiedName())
@@ -130,7 +130,7 @@ func (v *validator) validateMethod(method *desc.MethodDescriptor) error {
 	if out := method.GetOutputType(); out.GetFullyQualifiedName() == "google.longrunning.Operation" {
 		if opts := method.GetMethodOptions(); opts == nil {
 			v.addError(missingLROInfo, mFQN)
-		} else if eLRO, err := proto.GetExtension(opts, longrunning.E_OperationInfo); err != nil {
+		} else if eLRO, err := ext(opts, longrunning.E_OperationInfo); err != nil {
 			v.addError(missingLROInfo, mFQN)
 		} else {
 			lro := eLRO.(*longrunning.OperationInfo)
@@ -150,7 +150,7 @@ func (v *validator) validateMethod(method *desc.MethodDescriptor) error {
 	}
 
 	// validate google.api.method_signature
-	if eSig, err := proto.GetExtension(method.GetMethodOptions(), annotations.E_MethodSignature); err == nil {
+	if eSig, err := ext(method.GetMethodOptions(), annotations.E_MethodSignature); err == nil {
 		sigs := eSig.([]string)
 		input := method.GetInputType()
 
@@ -161,7 +161,7 @@ func (v *validator) validateMethod(method *desc.MethodDescriptor) error {
 			seenOptional := false
 
 			for _, field := range fields {
-				var f *desc.FieldDescriptor
+				f := input.FindFieldByName(field)
 
 				// nested field
 				if split := strings.Split(field, "."); len(split) > 1 {
@@ -171,30 +171,48 @@ func (v *validator) validateMethod(method *desc.MethodDescriptor) error {
 					for ndx, component := range split {
 						if f = msg.FindFieldByName(component); f == nil {
 							break
-						} else if f.IsRepeated() && ndx < len(split)-1 {
-							v.addError(fieldComponentRepeated, method.GetFullyQualifiedName(), field)
+						}
+
+						if f.IsRepeated() && ndx < len(split)-1 {
+							v.addError(
+								fieldComponentRepeated,
+								method.GetFullyQualifiedName(),
+								field,
+							)
+
 							break
 						}
 
 						msg = f.GetMessageType()
 					}
-				} else {
-					// top-level field
-					f = input.FindFieldByName(field)
 				}
 
 				// field doesn't exist
 				if f == nil {
-					v.addError(fieldDNE, field, method.GetFullyQualifiedName(), sig, input.GetFullyQualifiedName())
-				} else if eBehavior, err := proto.GetExtension(f.GetFieldOptions(), annotations.E_FieldBehavior); err == nil {
+					v.addError(
+						fieldDNE,
+						field,
+						method.GetFullyQualifiedName(),
+						sig,
+						input.GetFullyQualifiedName(),
+					)
+				} else if eBehavior, err := ext(f.GetFieldOptions(), annotations.E_FieldBehavior); err == nil {
 					behaviors := eBehavior.([]annotations.FieldBehavior)
 
 					// validate order of required & optional fields
 					for _, b := range behaviors {
 						if b == annotations.FieldBehavior_REQUIRED && seenOptional {
-							v.addError(requiredAfterOptional, method.GetFullyQualifiedName(), sig, field)
+							v.addError(
+								requiredAfterOptional,
+								method.GetFullyQualifiedName(),
+								sig,
+								field,
+							)
+
 							break
-						} else if b == annotations.FieldBehavior_OPTIONAL {
+						}
+
+						if b == annotations.FieldBehavior_OPTIONAL {
 							seenOptional = true
 							break
 						}
@@ -213,17 +231,25 @@ func (v *validator) validateMethod(method *desc.MethodDescriptor) error {
 func (v *validator) validateMessage(msg *desc.MessageDescriptor) error {
 	for _, field := range msg.GetFields() {
 		// validate resource reference
-		if eRef, err := proto.GetExtension(field.GetFieldOptions(), annotations.E_ResourceReference); err == nil {
+		if eRef, err := ext(field.GetFieldOptions(), annotations.E_ResourceReference); err == nil {
 			refName := *eRef.(*string)
 
 			// unresolvable resource reference message
 			if refMsg := v.resolveReference(refName, msg.GetFile()); refMsg == nil {
 				v.addError(resRefNotValidMessage, field.GetFullyQualifiedName(), refName)
-			} else {
+			} else if refMsg.GetFullyQualifiedName() != "google.api.Resource" {
 				// field referenced is not annotated or is annotated improperly as a resource
-				eRef, err := proto.GetExtension(refMsg.FindFieldByName(field.GetName()).GetFieldOptions(), annotations.E_Resource)
+				eRef, err := ext(
+					refMsg.FindFieldByName(field.GetName()).GetFieldOptions(),
+					annotations.E_Resource,
+				)
+
 				if err != nil || (eRef.(*annotations.Resource)).Pattern == "" {
-					v.addError(resRefNotAnnotated, field.GetFullyQualifiedName(), refMsg.GetFullyQualifiedName()+"."+field.GetName())
+					v.addError(
+						resRefNotAnnotated,
+						field.GetFullyQualifiedName(),
+						refMsg.GetFullyQualifiedName()+"."+field.GetName(),
+					)
 				}
 			}
 		}
@@ -255,21 +281,58 @@ func (v *validator) resolveReference(name string, file *desc.FileDescriptor) *de
 	}
 
 	// not a fully qualified name, make it one and check in parent file
+	//
+	// TODO(ndietz) this will break if the name refs a nested message
+	// in the parent file
 	if !strings.Contains(name, ".") {
-		msg := file.FindMessage(file.GetPackage() + "." + name)
-		if msg != nil {
+		if msg := file.FindMessage(file.GetPackage() + "." + name); msg != nil {
+			return msg
+		}
+
+		if msg := resolveFileResourceDef(name, file); msg != nil {
 			return msg
 		}
 	}
 
-	// this Message must be imported, check validator's file set
-	// iterating of the entire set isn't ideal, but necessary
-	// when searching for single message in all of the protos
+	localMsgName := name[strings.LastIndex(name, ".")+1:]
+
+	// this Message must be imported, check validator's file set.
+	// Iterating over the entire set isn't ideal, but necessary
+	// when searching for single message name in all protos
 	for _, f := range v.files {
 		if msg := f.FindMessage(name); msg != nil {
+			return msg
+		}
+
+		if msg := resolveFileResourceDef(localMsgName, f); msg != nil {
 			return msg
 		}
 	}
 
 	return nil
+}
+
+// resolveFileResourceDef attempts to resolve the resource_reference
+// name either within the given file or the validator's file set
+// as a File-level resource_definition.
+func resolveFileResourceDef(name string, file *desc.FileDescriptor) *desc.MessageDescriptor {
+	eResDefs, err := ext(file.GetFileOptions(), annotations.E_ResourceDefinition)
+	if err != nil {
+		return nil
+	}
+
+	resDefs := eResDefs.([]*annotations.Resource)
+	for _, resDef := range resDefs {
+		if resDef.GetSymbol() == name {
+			m, _ := desc.LoadMessageDescriptorForMessage(resDef)
+			return m
+		}
+	}
+
+	return nil
+}
+
+// ext wraps proto.GetExtension
+func ext(pb proto.Message, eDesc *proto.ExtensionDesc) (interface{}, error) {
+	return proto.GetExtension(pb, eDesc)
 }

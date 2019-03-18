@@ -323,6 +323,11 @@ func TestValidateMethod_MethodSignature(t *testing.T) {
 func TestValidateMessage(t *testing.T) {
 	var v validator
 
+	remoteDef, err := desc.LoadMessageDescriptorForMessage(&testdata.FooBar{})
+	if err != nil {
+		t.Error(err)
+	}
+
 	barDesc, err := desc.LoadMessageDescriptorForMessage(&testdata.Bar{})
 	if err != nil {
 		t.Error(err)
@@ -343,13 +348,16 @@ func TestValidateMessage(t *testing.T) {
 		t.Error(err)
 	}
 
-	v.files = map[string]*desc.FileDescriptor{"annotated_test.proto": barDesc.GetFile()}
+	v.files = map[string]*desc.FileDescriptor{
+		"annotated_test.proto":    barDesc.GetFile(),
+		"remote_definition.proto": remoteDef.GetFile(),
+	}
 
 	for _, tst := range []struct {
 		name, want string
 		msg        *desc.MessageDescriptor
 	}{
-		{name: "valid top-level reference", want: "", msg: barDesc},
+		{name: "valid references", want: "", msg: barDesc},
 		{name: "unresolvable top-lvl resource ref & not annotated, empty", want: fmt.Sprintf(resRefNotValidMessage+"; "+resRefNotAnnotated, "annotated.Biz.d", "Buz", "annotated.Biz.e", "annotated.Qux.e"), msg: bizDesc},
 		{name: "unresolvable top-lvl resource ref, empty", want: fmt.Sprintf(resRefNotValidMessage, "annotated.Baz.c", ""), msg: bazDesc},
 		{name: "resource ref field not annotated", want: fmt.Sprintf(resRefNotAnnotated, "annotated.Qux.req", "annotated.Foo.req"), msg: quxDesc},

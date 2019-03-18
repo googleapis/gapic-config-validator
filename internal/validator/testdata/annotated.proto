@@ -21,6 +21,16 @@ package annotated;
 
 option go_package = "github.com/googleapis/gapic-config-validator/internal/validator/testdata;testdata";
 
+option (google.api.resource_definition) = {
+  pattern: "projects/{project}/ref/{ref}"
+  symbol: "Ref"
+};
+
+option (google.api.resource_definition) = {
+  pattern: "projects/{project}/def/{def}"
+  symbol: "Def"
+};
+
 message Foo {
   string a = 1 [(google.api.resource).pattern = "projects/{project}/foo/{foo}"];
 
@@ -35,6 +45,10 @@ message Bar {
   Baz baz = 2;
 
   string a = 3 [(google.api.resource_reference) = "Foo"];
+
+  string def = 4 [(google.api.resource_reference) = "Def"];
+
+  string remote = 5 [(google.api.resource_reference) = "Remote"];
 }
 
 message Baz {
