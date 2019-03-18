@@ -4,5 +4,9 @@ gen-testdata:
 test:
 	go test ./...
 
+cover:
+	go test ./... -coverprofile=validator.cov
+	go tool cover -html=validator.cov
+
 install:
 	go install ./cmd/protoc-gen-gapic-validator
