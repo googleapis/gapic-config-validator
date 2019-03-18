@@ -340,6 +340,11 @@ func TestValidateMessage(t *testing.T) {
 		t.Error(err)
 	}
 
+	quuzDesc, err := desc.LoadMessageDescriptorForMessage(&testdata.Quuz{})
+	if err != nil {
+		t.Error(err)
+	}
+
 	v.files = map[string]*desc.FileDescriptor{
 		"annotated_test.proto":    barDesc.GetFile(),
 		"remote_definition.proto": remoteDef.GetFile(),
@@ -353,6 +358,7 @@ func TestValidateMessage(t *testing.T) {
 		{name: "unresolvable top-lvl resource ref & not annotated, empty", want: fmt.Sprintf(resRefNotValidMessage+"; "+resRefNotAnnotated, "annotated.Biz.d", "Buz", "annotated.Biz.e", "annotated.Qux.e"), msg: bizDesc},
 		{name: "unresolvable top-lvl resource ref, empty", want: fmt.Sprintf(resRefNotValidMessage, "annotated.Baz.c", ""), msg: bazDesc},
 		{name: "resource ref field not annotated", want: fmt.Sprintf(resRefNotAnnotated, "annotated.Qux.req", "annotated.Foo.req"), msg: quxDesc},
+		{name: "resource set entry misssing symbol", want: fmt.Sprintf(resSetEntryMissingSymbol, "annotated.Quuz.f", "missing/{symbol}"), msg: quuzDesc},
 	} {
 		v.validateMessage(tst.msg)
 

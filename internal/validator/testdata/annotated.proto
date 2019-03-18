@@ -69,3 +69,13 @@ message Qux {
   string e = 2 [(google.api.resource).pattern = ""];
 }
 
+message Quuz {
+  string f = 1 [(google.api.resource_set) = {
+    resources: [{pattern: "missing/{symbol}"}]
+  }];
+
+  string a = 2 [(google.api.resource_set) = {
+    resource_references: ["Foo"]
+  }];
+}
+

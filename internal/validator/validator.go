@@ -43,8 +43,9 @@ const (
 	fieldComponentRepeated = "rpc %v method signature entry field %v cannot be a field within a repeated field"
 
 	// resource reslated errors
-	resRefNotValidMessage = "unable to resolve resource reference for field %v: value %v is not a valid message"
-	resRefNotAnnotated    = "unable to resolve resource reference for field %v: field %v is not annotated as a resource"
+	resRefNotValidMessage    = "unable to resolve resource reference for field %v: value %v is not a valid message"
+	resRefNotAnnotated       = "unable to resolve resource reference for field %v: field %v is not annotated as a resource"
+	resSetEntryMissingSymbol = "resource set entry for field %v with pattern %v missing field google.api.resource.symbol"
 )
 
 // Validate ensures that the given input protos have valid
@@ -112,7 +113,7 @@ func (v *validator) validateMethod(method *desc.MethodDescriptor) {
 	mFQN := method.GetFullyQualifiedName()
 
 	// validate google.longrunning.operation_info
-	if out := method.GetOutputType(); out.GetFullyQualifiedName() == "google.longrunning.Operation" {
+	if method.GetOutputType().GetFullyQualifiedName() == "google.longrunning.Operation" {
 		if opts := method.GetMethodOptions(); opts == nil {
 			v.addError(missingLROInfo, mFQN)
 		} else if eLRO, err := ext(opts, longrunning.E_OperationInfo); err != nil {
@@ -213,28 +214,48 @@ func (v *validator) validateMethod(method *desc.MethodDescriptor) {
 
 func (v *validator) validateMessage(msg *desc.MessageDescriptor) {
 	for _, field := range msg.GetFields() {
-		// validate resource reference
+		// validate individual resource reference
 		if eRef, err := ext(field.GetFieldOptions(), annotations.E_ResourceReference); err == nil {
-			refName := *eRef.(*string)
+			v.validateResRef(*eRef.(*string), field)
+		} else if eResSet, err := ext(field.GetFieldOptions(), annotations.E_ResourceSet); err == nil {
+			// validate field resource_set
+			set := eResSet.(*annotations.ResourceSet)
 
-			// unresolvable resource reference message
-			if refMsg := v.resolveReference(refName, msg.GetFile()); refMsg == nil {
-				v.addError(resRefNotValidMessage, field.GetFullyQualifiedName(), refName)
-			} else if refMsg.GetFullyQualifiedName() != "google.api.Resource" {
-				// field referenced is not annotated or is annotated improperly as a resource
-				eRef, err := ext(
-					refMsg.FindFieldByName(field.GetName()).GetFieldOptions(),
-					annotations.E_Resource,
-				)
-
-				if err != nil || (eRef.(*annotations.Resource)).Pattern == "" {
+			for _, res := range set.GetResources() {
+				if res.GetSymbol() == "" {
 					v.addError(
-						resRefNotAnnotated,
+						resSetEntryMissingSymbol,
 						field.GetFullyQualifiedName(),
-						refMsg.GetFullyQualifiedName()+"."+field.GetName(),
+						res.GetPattern(),
 					)
 				}
 			}
+
+			for _, ref := range set.GetResourceReferences() {
+				v.validateResRef(ref, field)
+			}
+		}
+	}
+}
+
+// validateResRef ensures that the given resource_reference is resolvable
+// within the field's file or the file set.
+func (v *validator) validateResRef(name string, field *desc.FieldDescriptor) {
+	if refMsg := v.resolveReference(name, field.GetFile()); refMsg == nil {
+		v.addError(resRefNotValidMessage, field.GetFullyQualifiedName(), name)
+	} else if refMsg.GetFullyQualifiedName() != "google.api.Resource" {
+		// field referenced is not annotated or is annotated improperly as a resource
+		eRef, err := ext(
+			refMsg.FindFieldByName(field.GetName()).GetFieldOptions(),
+			annotations.E_Resource,
+		)
+
+		if err != nil || (eRef.(*annotations.Resource)).Pattern == "" {
+			v.addError(
+				resRefNotAnnotated,
+				field.GetFullyQualifiedName(),
+				refMsg.GetFullyQualifiedName()+"."+field.GetName(),
+			)
 		}
 	}
 }
