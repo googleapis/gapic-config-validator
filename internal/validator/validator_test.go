@@ -67,9 +67,7 @@ func TestValidateFile(t *testing.T) {
 	}{
 		{name: "missing default_host in Service", want: fmt.Sprintf(missingDefaultHost, missingServ.GetName()), file: missing},
 	} {
-		if err := v.validate(tst.file); err != nil {
-			t.Error(err)
-		}
+		v.validate(tst.file)
 
 		if actual := v.resp.GetError(); actual != tst.want {
 			t.Errorf("%s: got(%s) want(%s)", tst.name, actual, tst.want)
@@ -121,9 +119,7 @@ func TestValidateService(t *testing.T) {
 		{name: "valid default_host value", want: "", serv: valid},
 		{name: "no ServiceOptions", want: fmt.Sprintf(missingDefaultHost, none.GetFullyQualifiedName()), serv: none},
 	} {
-		if err := v.validateService(tst.serv); err != nil {
-			t.Error(err)
-		}
+		v.validateService(tst.serv)
 
 		if actual := v.resp.GetError(); actual != tst.want {
 			t.Errorf("%s: got(%s) want(%s)", tst.name, actual, tst.want)
@@ -227,9 +223,7 @@ func TestValidateMethod_LRO(t *testing.T) {
 		{name: "unresolvable response_type & metadata_type", want: fmt.Sprintf(unresolvableLROResponseType+"; "+unresolvableLROMetadataType, uInfo.GetResponseType(), unresolvable.GetFullyQualifiedName(), uInfo.GetMetadataType(), unresolvable.GetFullyQualifiedName()), mthd: unresolvable},
 		{name: "valid LRO operation_info", want: "", mthd: valid},
 	} {
-		if err := v.validateMethod(tst.mthd); err != nil {
-			t.Error(err)
-		}
+		v.validateMethod(tst.mthd)
 
 		if actual := v.resp.GetError(); actual != tst.want {
 			t.Errorf("%s: got(%s) want(%s)", tst.name, actual, tst.want)
@@ -307,9 +301,7 @@ func TestValidateMethod_MethodSignature(t *testing.T) {
 			mthd: method,
 		},
 	} {
-		if err := v.validateMethod(tst.mthd); err != nil {
-			t.Error(err)
-		}
+		v.validateMethod(tst.mthd)
 
 		if actual := v.resp.GetError(); actual != tst.want {
 			t.Errorf("%s: got(%s) want(%s)", tst.name, actual, tst.want)
@@ -362,9 +354,7 @@ func TestValidateMessage(t *testing.T) {
 		{name: "unresolvable top-lvl resource ref, empty", want: fmt.Sprintf(resRefNotValidMessage, "annotated.Baz.c", ""), msg: bazDesc},
 		{name: "resource ref field not annotated", want: fmt.Sprintf(resRefNotAnnotated, "annotated.Qux.req", "annotated.Foo.req"), msg: quxDesc},
 	} {
-		if err := v.validateMessage(tst.msg); err != nil {
-			t.Error(err)
-		}
+		v.validateMessage(tst.msg)
 
 		if actual := v.resp.GetError(); actual != tst.want {
 			t.Errorf("%s: got(%s) want(%s)", tst.name, actual, tst.want)

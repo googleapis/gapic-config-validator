@@ -64,12 +64,7 @@ func Validate(req *plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorResponse, 
 			return &v.resp, fmt.Errorf("FileToGenerate (%s) did not have a rich descriptor", name)
 		}
 
-		err = v.validate(rich)
-		if err != nil {
-			// this is an error encountered while attempting to validate
-			// the file, not a misconfiguration in the proto
-			return &v.resp, err
-		}
+		v.validate(rich)
 	}
 
 	return &v.resp, nil
@@ -82,27 +77,21 @@ type validator struct {
 
 // validate executes GAPIC configuration validation on the given
 // rich file descriptor.
-func (v *validator) validate(file *desc.FileDescriptor) error {
+func (v *validator) validate(file *desc.FileDescriptor) {
 	// validate Services
 	for _, serv := range file.GetServices() {
-		if err := v.validateService(serv); err != nil {
-			return err
-		}
+		v.validateService(serv)
 	}
 
 	// validate Messages
 	for _, msg := range file.GetMessageTypes() {
-		if err := v.validateMessage(msg); err != nil {
-			return err
-		}
+		v.validateMessage(msg)
 	}
-
-	return nil
 }
 
 // validateService checks the Service-level configuration annotations
 // and validates each of its methods.
-func (v *validator) validateService(serv *desc.ServiceDescriptor) error {
+func (v *validator) validateService(serv *desc.ServiceDescriptor) {
 	// validate google.api.default_host
 	if opts := serv.GetServiceOptions(); opts == nil {
 		v.addError(missingDefaultHost, serv.GetFullyQualifiedName())
@@ -114,16 +103,12 @@ func (v *validator) validateService(serv *desc.ServiceDescriptor) error {
 
 	// validate Methods
 	for _, mthd := range serv.GetMethods() {
-		if err := v.validateMethod(mthd); err != nil {
-			return err
-		}
+		v.validateMethod(mthd)
 	}
-
-	return nil
 }
 
 // validateMethod checks the Method-level configuration annotations.
-func (v *validator) validateMethod(method *desc.MethodDescriptor) error {
+func (v *validator) validateMethod(method *desc.MethodDescriptor) {
 	mFQN := method.GetFullyQualifiedName()
 
 	// validate google.longrunning.operation_info
@@ -137,13 +122,13 @@ func (v *validator) validateMethod(method *desc.MethodDescriptor) error {
 
 			if res := lro.GetResponseType(); res == "" {
 				v.addError(missingLROResponseType, mFQN)
-			} else if msg := v.resolveReference(res, method.GetFile()); msg == nil {
+			} else if v.resolveReference(res, method.GetFile()) == nil {
 				v.addError(unresolvableLROResponseType, res, mFQN)
 			}
 
 			if meta := lro.GetMetadataType(); meta == "" {
 				v.addError(missingLROMetadataType, mFQN)
-			} else if msg := v.resolveReference(meta, method.GetFile()); msg == nil {
+			} else if v.resolveReference(meta, method.GetFile()) == nil {
 				v.addError(unresolvableLROMetadataType, meta, mFQN)
 			}
 		}
@@ -224,11 +209,9 @@ func (v *validator) validateMethod(method *desc.MethodDescriptor) error {
 			}
 		}
 	}
-
-	return nil
 }
 
-func (v *validator) validateMessage(msg *desc.MessageDescriptor) error {
+func (v *validator) validateMessage(msg *desc.MessageDescriptor) {
 	for _, field := range msg.GetFields() {
 		// validate resource reference
 		if eRef, err := ext(field.GetFieldOptions(), annotations.E_ResourceReference); err == nil {
@@ -254,8 +237,6 @@ func (v *validator) validateMessage(msg *desc.MessageDescriptor) error {
 			}
 		}
 	}
-
-	return nil
 }
 
 // addError adds the given validation error to the plugin response
