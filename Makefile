@@ -10,3 +10,6 @@ cover:
 
 install:
 	go install ./cmd/protoc-gen-gapic-validator
+
+clean:
+	rm -f validator.cov
