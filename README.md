@@ -63,8 +63,70 @@ protoc -I $COMMON_PROTO \
     a.proto b.proto
 ```
 
-Testing
--------
+Conformance Testing
+-------------------
+
+Micro-generator authors (or other GAPIC config-based plugin authors) can test the conformance of their
+error messages against the `gapic-config-validator` using the provided `conformance` testing tool.
+
+The `conformance` utility is a binary that exercises both the `gapic-config-validator` and the targeted
+plugin against a set of error mode scenarios. The error emitted by the given plugin is diff'd against
+that of the validator and reported to the user. If a plugin error does not conform, the `conformance`
+utility will have an exit code of one.
+
+#### Installing `conformance`
+
+##### Download release binary
+
+```sh
+> curl -sSL https://github.com/googleapis/gapic-config-validator/releases/download/v$SEMVER/gapic-config-validator-$SEMVER-$OS-$ARCH.tar.gz | tar xz
+> chmod +x conformance
+> export PATH=$PATH:`pwd`
+```
+
+##### Via Go tooling
+
+```sh
+> go get github.com/googleapis/gapic-config-validator/cmd/conformance
+```
+
+##### From source
+
+```sh
+> mkdir -p $GOPATH/src/github.com/googleapis
+> cd $GOPATH/src/github.com/googleapis
+> git clone https://github.com/googleapis/gapic-config-validator.git
+> cd gapic-config-validator
+> go install ./cmd/conformance
+```
+
+`make install` executes that last `go install` command for ease of development. 
+
+#### Invoking `conformance`
+
+```sh
+> conformance -plugin="protoc-gen-go_gapic" -plugin_opts="go-gapic-package=foo.com/bar/v1;bar"
+```
+
+##### Options
+
+* `-plugin`: the plugin command to execute. This could the path to an executable or just the
+executable itself if it's in the `PATH`.
+* `-plugin_opts`: comma-delimited string of options to supply the plugin executable.
+* `-verbose`: verbose logging mode. Logs the error messages of the validator and plugin
+
+#### Adding `conformance` scenarios
+
+The scenarios exercised by `conformance` are built into the binary. This means the protobufs
+provided as `CodeGeneratorRequest` input are built dynamically. The `scenarios()` method builds
+the list of scenarios to exercise. Adding a new scenario means adding the code to build the
+protobuf & `CodeGeneratorRequest` here. 
+
+*Note: the proto dependencies required by the GAPIC config annotations are loaded and provided*
+*via the `common()` method.*
+
+Testing `gapic-config-validator`
+--------------------------------
 
 If you are contributing to this project, run the tests with `make test`.
 
