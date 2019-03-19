@@ -27,25 +27,25 @@ import (
 
 const (
 	// default_host related errors
-	missingDefaultHost = "service %v is missing option google.api.default_host"
-	emptyDefaultHost   = "service %v google.api.default_host is empty"
+	missingDefaultHost = "service %q is missing option google.api.default_host"
+	emptyDefaultHost   = "service %q google.api.default_host is empty"
 
 	// LRO operation_info related errors
-	missingLROInfo              = "rpc %v returns google.longrunning.Operation but is missing option google.longrunning.operation_info"
-	missingLROResponseType      = "rpc %v has google.longrunning.operation_info but is missing option google.longrunning.operation_info.response_type"
-	missingLROMetadataType      = "rpc %v has google.longrunning.operation_info but is missing option google.longrunning.operation_info.metadata_type"
-	unresolvableLROResponseType = "unable to resolve google.longrunning.operation_info.response_type value %v in rpc %v"
-	unresolvableLROMetadataType = "unable to resolve google.longrunning.operation_info.metadata_type value %v in rpc %v"
+	missingLROInfo              = "rpc %q returns google.longrunning.Operation but is missing option google.longrunning.operation_info"
+	missingLROResponseType      = "rpc %q has google.longrunning.operation_info but is missing option google.longrunning.operation_info.response_type"
+	missingLROMetadataType      = "rpc %q has google.longrunning.operation_info but is missing option google.longrunning.operation_info.metadata_type"
+	unresolvableLROResponseType = "unable to resolve google.longrunning.operation_info.response_type value %q in rpc %q"
+	unresolvableLROMetadataType = "unable to resolve google.longrunning.operation_info.metadata_type value %q in rpc %q"
 
 	// method_signature related errors
-	fieldDNE               = "field %v listed in rpc %v method signature entry (%v) does not exist in %v"
-	requiredAfterOptional  = "rpc %v method signature entry (%v) lists required field %v after an optional field"
-	fieldComponentRepeated = "rpc %v method signature entry field %v cannot be a field within a repeated field"
+	fieldDNE               = "field %q listed in rpc %q method signature entry (%q) does not exist in %q"
+	requiredAfterOptional  = "rpc %q method signature entry (%q) lists required field %q after an optional field"
+	fieldComponentRepeated = "rpc %q method signature entry field %q cannot be a field within a repeated field"
 
 	// resource reslated errors
-	resRefNotValidMessage    = "unable to resolve resource reference for field %v: value %v is not a valid message"
-	resRefNotAnnotated       = "unable to resolve resource reference for field %v: field %v is not annotated as a resource"
-	resSetEntryMissingSymbol = "resource set entry for field %v with pattern %v missing field google.api.resource.symbol"
+	resRefNotValidMessage    = "unable to resolve resource reference for field %q: value %q is not a valid message"
+	resRefNotAnnotated       = "unable to resolve resource reference for field %q: field %q is not annotated as a resource"
+	resSetEntryMissingSymbol = "resource set entry for field %q with pattern %q missing field google.api.resource.symbol"
 )
 
 // Validate ensures that the given input protos have valid
