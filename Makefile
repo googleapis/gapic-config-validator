@@ -16,7 +16,7 @@ clean:
 	rm -f protoc-gen-gapic-validator
 
 conformance:
-	go install ./cmd/conformance
+	go install ./cmd/gapic-error-conformance
 	
 image:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ./cmd/protoc-gen-gapic-validator
