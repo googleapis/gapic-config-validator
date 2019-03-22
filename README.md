@@ -130,6 +130,8 @@ Testing `gapic-config-validator`
 
 If you are contributing to this project, run the tests with `make test`.
 
+To view code coverage, run `make coverage`.
+
 #### Test protobuf generation
 
 Some tests require more well-defined descriptors than it makes sense to define by hand in the tests themselves.
@@ -137,6 +139,39 @@ Some tests require more well-defined descriptors than it makes sense to define b
 The [internal/validator/testdata](/internal/validator/testdata) directory contains protos and their generated types that are used in tests.
 
 Should a change be made to the protos in this directory, the generated types need to be regenerated via `make gen-testdata`. You will need the aforementioned `$COMMON_PROTO` set properly.
+
+Releasing
+---------
+
+Follow these steps to make a release:
+
+1. Update the `VERSION` in [release.sh](/release.sh)
+2. Open a PR with the **only** `VERSION` bump (notice the prepended `v` for the tag name)
+```sh
+git add release.sh
+git commit -m "release v$VERSION"
+```
+3. Once version bump PR is merged, create and push the version tag (notice the prepended `v` for the tag name)
+```sh
+git tag v$VERSION && git push --tags
+```
+4. Build release assets (Note: must have Docker running for image building)
+```sh
+make release
+```
+5. Publish release with `VERSION` tag.   
+    a. include the `gapic-config-validator-*.tar.gz ` release assets
+
+    b. push the `latest` and `VERSION` tagged Docker images
+  ```sh
+  gcloud auth configure-docker
+  gcloud docker -- push gcr.io/gapic-images/gapic-config-validator
+  gcloud docker -- push gcr.io/gapic-images/gapic-config-validator:$VERSION
+  ```
+6. (optional) Clean up!
+```sh
+make clean
+```
 
 Disclaimer
 ----------
