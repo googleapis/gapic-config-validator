@@ -315,6 +315,11 @@ func TestValidateMethod_MethodSignature(t *testing.T) {
 func TestValidateMessage(t *testing.T) {
 	var v validator
 
+	fooDef, err := desc.LoadMessageDescriptorForMessage(&testdata.Foo{})
+	if err != nil {
+		t.Error(err)
+	}
+
 	remoteDef, err := desc.LoadMessageDescriptorForMessage(&testdata.FooBar{})
 	if err != nil {
 		t.Error(err)
@@ -335,12 +340,22 @@ func TestValidateMessage(t *testing.T) {
 		t.Error(err)
 	}
 
-	quxDesc, err := desc.LoadMessageDescriptorForMessage(&testdata.Qux{})
+	wibbleDesc, err := desc.LoadMessageDescriptorForMessage(&testdata.Wibble{})
 	if err != nil {
 		t.Error(err)
 	}
 
-	quuzDesc, err := desc.LoadMessageDescriptorForMessage(&testdata.Quuz{})
+	wobbleDesc, err := desc.LoadMessageDescriptorForMessage(&testdata.Wobble{})
+	if err != nil {
+		t.Error(err)
+	}
+
+	wubbleDesc, err := desc.LoadMessageDescriptorForMessage(&testdata.Wubble{})
+	if err != nil {
+		t.Error(err)
+	}
+
+	flobDesc, err := desc.LoadMessageDescriptorForMessage(&testdata.Flob{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -350,15 +365,20 @@ func TestValidateMessage(t *testing.T) {
 		"remote_definition.proto": remoteDef.GetFile(),
 	}
 
+	invalidRTK := "badresource_type_kindbadresource_type_kindbadresource_type_kindbadresource_type_kindbadresource_type_kind"
+
 	for _, tst := range []struct {
 		name, want string
 		msg        *desc.MessageDescriptor
 	}{
+		{name: "valid resource", want: "", msg: fooDef},
 		{name: "valid references", want: "", msg: barDesc},
+		{name: "invalid resource, missing pattern & name", want: fmt.Sprintf(resMissingPattern+"; "+resMissingNameField, wibbleDesc.GetFullyQualifiedName(), wibbleDesc.GetFullyQualifiedName()), msg: wibbleDesc},
+		{name: "invalid resource, missing type", want: fmt.Sprintf(resMissingType, wobbleDesc.GetFullyQualifiedName()), msg: wobbleDesc},
+		{name: "invalid resource, bad type kind format & length", want: fmt.Sprintf(resTypeKindInvalid+"; "+resTypeKindTooLong, invalidRTK, wubbleDesc.GetFullyQualifiedName(), maxCharRescTypeKind), msg: wubbleDesc},
+		{name: "invalid resource, invalid type format", want: fmt.Sprintf(resInvalidTypeFormat, flobDesc.GetFullyQualifiedName()), msg: flobDesc},
 		{name: "unresolvable top-lvl resource ref & not annotated, empty", want: fmt.Sprintf(resRefNotValidMessage+"; "+resRefNotAnnotated, "annotated.Biz.d", "Buz", "annotated.Biz.e", "annotated.Qux.e"), msg: bizDesc},
 		{name: "unresolvable top-lvl resource ref, empty", want: fmt.Sprintf(resRefNotValidMessage, "annotated.Baz.c", ""), msg: bazDesc},
-		{name: "resource ref field not annotated", want: fmt.Sprintf(resRefNotAnnotated, "annotated.Qux.req", "annotated.Foo.req"), msg: quxDesc},
-		{name: "resource set entry misssing symbol", want: fmt.Sprintf(resSetEntryMissingSymbol, "annotated.Quuz.f", "missing/{symbol}"), msg: quuzDesc},
 	} {
 		v.validateMessage(tst.msg)
 

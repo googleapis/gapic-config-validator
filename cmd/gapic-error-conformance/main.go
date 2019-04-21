@@ -264,7 +264,9 @@ func scenarios() []scenario {
 	proto.SetExtension(
 		refDNEOpts,
 		annotations.E_ResourceReference,
-		proto.String("DNE"),
+		&annotations.ResourceReference{
+			Type: "DNE",
+		},
 	)
 
 	refDNE := &plugin.CodeGeneratorRequest{
@@ -278,30 +280,14 @@ func scenarios() []scenario {
 	proto.SetExtension(
 		unannotatedRefOpts,
 		annotations.E_ResourceReference,
-		proto.String("Bar"),
+		&annotations.ResourceReference{
+			Type: "Bar",
+		},
 	)
 
 	unannotatedRef := &plugin.CodeGeneratorRequest{
 		FileToGenerate: []string{"foo.proto"},
 		ProtoFile:      append(common, buildProto(nil, nil, nil, unannotatedRefOpts, false)),
-		Parameter:      proto.String(opts),
-	}
-
-	// resource_set entry missing symbol
-	badResSetEntryOpts := &descriptor.FieldOptions{}
-	proto.SetExtension(
-		badResSetEntryOpts,
-		annotations.E_ResourceSet,
-		&annotations.ResourceSet{
-			Resources: []*annotations.Resource{
-				&annotations.Resource{Pattern: "missing/{symbol}"},
-			},
-		},
-	)
-
-	badResSetEntry := &plugin.CodeGeneratorRequest{
-		FileToGenerate: []string{"foo.proto"},
-		ProtoFile:      append(common, buildProto(nil, nil, nil, badResSetEntryOpts, false)),
 		Parameter:      proto.String(opts),
 	}
 
@@ -316,7 +302,6 @@ func scenarios() []scenario {
 		{name: "repeated nested field component in method_signature", req: badCompSig},
 		{name: "unresolvable Message for resource_reference", req: refDNE},
 		{name: "resource_reference to unannotated field", req: unannotatedRef},
-		{name: "resource_set entry missing symbold field", req: badResSetEntry},
 	}
 }
 

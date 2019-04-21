@@ -20,11 +20,11 @@ import "google/api/resource.proto";
 
 option go_package = "github.com/googleapis/gapic-config-validator/internal/validator/testdata;testdata";
 
-option (google.api.resource_definition) = {
-  pattern: "projects/{project}/remotes/{remote}"
-  symbol: "Remote"
-};
-
 message FooBar {
+  option (google.api.resource) = {
+    type: "remote.foo.com/FooBar"
+    pattern: "projects/{project}/remotes/{remote}"
+  };
+
   string name = 1;
 }
