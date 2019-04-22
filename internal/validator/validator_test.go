@@ -378,7 +378,7 @@ func TestValidateMessage(t *testing.T) {
 		{name: "invalid resource, bad type kind format & length", want: fmt.Sprintf(resTypeKindInvalid+"; "+resTypeKindTooLong, invalidRTK, wubbleDesc.GetFullyQualifiedName(), maxCharRescTypeKind), msg: wubbleDesc},
 		{name: "invalid resource, invalid type format", want: fmt.Sprintf(resInvalidTypeFormat, flobDesc.GetFullyQualifiedName()), msg: flobDesc},
 		{name: "unresolvable top-lvl resource ref & not annotated, empty", want: fmt.Sprintf(resRefNotValidMessage+"; "+resRefNotAnnotated, "annotated.Biz.d", "Buz", "annotated.Biz.e", "annotated.Qux.e"), msg: bizDesc},
-		{name: "unresolvable top-lvl resource ref, empty", want: fmt.Sprintf(resRefNotValidMessage, "annotated.Baz.c", ""), msg: bazDesc},
+		{name: "unresolvable top-lvl resource ref, empty", want: fmt.Sprintf(resRefInvalidTypeFormat, "annotated.Baz.c"), msg: bazDesc},
 	} {
 		v.validateMessage(tst.msg)
 

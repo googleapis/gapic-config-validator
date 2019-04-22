@@ -40,7 +40,7 @@ message Bar {
 
   Baz baz = 2;
 
-  string a = 3 [(google.api.resource_reference).type = "Foo"];
+  string a = 3 [(google.api.resource_reference).type = "foo.bar.com/Foo"];
 
   string def = 4;
 
@@ -54,9 +54,9 @@ message Baz {
 }
 
 message Biz {
-  string d = 1 [(google.api.resource_reference).type = "Buz"];
+  string d = 1 [(google.api.resource_reference).type = "foo.bar.com/Buz"];
 
-  string e = 2 [(google.api.resource_reference).type = "Qux"];
+  string e = 2 [(google.api.resource_reference).type = "foo.bar.com/Qux"];
 }
 
 message Qux {

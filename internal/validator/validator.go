@@ -44,15 +44,16 @@ const (
 	fieldComponentRepeated = "rpc %q method signature entry field %q cannot be a field within a repeated field"
 
 	// resource reslated errors
-	resRefNotValidMessage = "unable to resolve resource reference for field %q: value %q is not a valid message"
-	resRefNotAnnotated    = "unable to resolve resource reference for field %q: message %q is not annotated as a resource"
-	resRefFieldDNE        = "unable to resolve resource reference for field %q: field does not exist or is not defined on message %q"
-	resMissingType        = "resource for message %q missing field google.api.resource.type"
-	resInvalidTypeFormat  = "resource.type for message %q must be {service_name}/{resource_type_kind}"
-	resTypeKindInvalid    = "resource_type_kind %q has invalid format, must match regexp [A-Z][a-zA-Z0-9]+"
-	resTypeKindTooLong    = "resource_type_kind in message %q must not be longer than %d characters"
-	resMissingPattern     = "field %q resource missing pattern definition"
-	resMissingNameField   = "resource message %q missing a name field"
+	resRefNotValidMessage   = "unable to resolve resource reference for field %q: value %q is not a valid message"
+	resRefNotAnnotated      = "unable to resolve resource reference for field %q: message %q is not annotated as a resource"
+	resRefFieldDNE          = "unable to resolve resource reference for field %q: field does not exist or is not defined on message %q"
+	resRefInvalidTypeFormat = "resource_reference.(child_)type for field %q must be {service_name}/{resource_type_kind}"
+	resMissingType          = "resource for message %q missing field google.api.resource.type"
+	resInvalidTypeFormat    = "resource.(child_)type for message %q must be {service_name}/{resource_type_kind}"
+	resTypeKindInvalid      = "resource_type_kind %q has invalid format, must match regexp [A-Z][a-zA-Z0-9]+"
+	resTypeKindTooLong      = "resource_type_kind in message %q must not be longer than %d characters"
+	resMissingPattern       = "field %q resource missing pattern definition"
+	resMissingNameField     = "resource message %q missing a name field"
 
 	maxCharRescTypeKind = 100
 )
@@ -284,18 +285,21 @@ func (v *validator) validateRescTypeKind(rtk string, msg *desc.MessageDescriptor
 // validateResRef ensures that the given resource_reference is resolvable
 // within the field's file or the file set.
 func (v *validator) validateResRef(ref *annotations.ResourceReference, field *desc.FieldDescriptor) {
-	var serv string
 	typ := ref.GetType()
 
 	if typ == "" {
 		typ = ref.GetChildType()
 	}
 
-	if strings.Contains(typ, "/") {
-		split := strings.Split(typ, "/")
-		serv = split[0]
-		typ = split[1]
+	split := strings.Split(typ, "/")
+
+	if len(split) != 2 {
+		v.addError(resRefInvalidTypeFormat, field.GetFullyQualifiedName())
+		return
 	}
+
+	serv := split[0]
+	typ = split[1]
 
 	refMsg := v.resolveResRefMessage(typ, serv, field.GetFile())
 
