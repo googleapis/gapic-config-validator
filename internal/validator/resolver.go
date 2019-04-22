@@ -3,6 +3,8 @@ package validator
 import (
 	"strings"
 
+	"google.golang.org/genproto/googleapis/api/annotations"
+
 	"github.com/jhump/protoreflect/desc"
 )
 
@@ -20,11 +22,25 @@ func (v *validator) resolveResRefMessage(typ, serv string, file *desc.FileDescri
 		return m
 	}
 
-	// full := serv + "/" + typ
-
-	// check configured types using serv
+	// check the whole world for resources
 	//
-	// TODO(ndietz)
+	// iterating over the entire file set of
+	// services is not ideal, but the unified
+	// resource design will go through some churn
+	for _, f := range v.files {
+		for _, s := range f.GetServices() {
+			eHost, err := ext(s.GetServiceOptions(), annotations.E_DefaultHost)
+			if err != nil {
+				continue
+			}
+
+			if serv == *eHost.(*string) {
+				if m := f.FindMessage(f.GetPackage() + "." + typ); m != nil {
+					return m
+				}
+			}
+		}
+	}
 
 	return nil
 }

@@ -16,9 +16,14 @@ syntax = "proto3";
 
 package definition;
 
+import "google/api/client.proto";
 import "google/api/resource.proto";
 
 option go_package = "github.com/googleapis/gapic-config-validator/internal/validator/testdata;testdata";
+
+service FooBarService {
+  option (google.api.default_host) = "foobar.api.com";
+}
 
 message FooBar {
   option (google.api.resource) = {
