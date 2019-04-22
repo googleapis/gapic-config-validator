@@ -284,22 +284,20 @@ func (v *validator) validateRescTypeKind(rtk string, msg *desc.MessageDescriptor
 // validateResRef ensures that the given resource_reference is resolvable
 // within the field's file or the file set.
 func (v *validator) validateResRef(ref *annotations.ResourceReference, field *desc.FieldDescriptor) {
-	var refMsg *desc.MessageDescriptor
+	var serv string
 	typ := ref.GetType()
 
-	if typ != "" {
-		var serv string
-
-		if strings.Contains(typ, "/") {
-			split := strings.Split(typ, "/")
-			serv = split[0]
-			typ = split[1]
-		}
-
-		refMsg = v.resolveResRefMessage(typ, serv, field.GetFile())
-	} else if typ = ref.GetChildType(); typ != "" {
-		refMsg = v.resolveMsgReference(typ, field.GetFile())
+	if typ == "" {
+		typ = ref.GetChildType()
 	}
+
+	if strings.Contains(typ, "/") {
+		split := strings.Split(typ, "/")
+		serv = split[0]
+		typ = split[1]
+	}
+
+	refMsg := v.resolveResRefMessage(typ, serv, field.GetFile())
 
 	if refMsg == nil {
 		v.addError(resRefNotValidMessage, field.GetFullyQualifiedName(), typ)

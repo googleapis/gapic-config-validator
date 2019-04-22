@@ -44,7 +44,7 @@ message Bar {
 
   string def = 4;
 
-  string remote = 5 [(google.api.resource_reference).child_type = "definition.FooBar"];
+  string remote = 5 [(google.api.resource_reference).child_type = "foo.bar.com/Foo"];
 }
 
 message Baz {
