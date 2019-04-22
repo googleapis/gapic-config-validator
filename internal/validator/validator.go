@@ -60,6 +60,13 @@ const (
 
 var (
 	resourceTypeKindRegexp *regexp.Regexp
+	wellKnownTypes         = map[string]bool{
+		"cloudresourcemanager.googleapis.com/Project":      true,
+		"cloudresourcemanager.googleapis.com/Organization": true,
+		"cloudresourcemanager.googleapis.com/Folder":       true,
+		"cloud.googleapis.com/Location":                    true,
+		"cloudbilling.googleapis.com/BillingAccount":       true,
+	}
 )
 
 // Validate ensures that the given input protos have valid
@@ -289,6 +296,11 @@ func (v *validator) validateResRef(ref *annotations.ResourceReference, field *de
 
 	if typ == "" {
 		typ = ref.GetChildType()
+	}
+
+	// check well-known types
+	if wellKnownTypes[typ] {
+		return
 	}
 
 	split := strings.Split(typ, "/")

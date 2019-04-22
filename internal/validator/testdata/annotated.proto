@@ -60,7 +60,7 @@ message Biz {
 }
 
 message Qux {
-  string req = 1;
+  string req = 1 [(google.api.resource_reference).type = "cloud.googleapis.com/Location"];
 
   string e = 2;
 }

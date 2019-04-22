@@ -360,6 +360,11 @@ func TestValidateMessage(t *testing.T) {
 		t.Error(err)
 	}
 
+	quxDesc, err := desc.LoadMessageDescriptorForMessage(&testdata.Qux{})
+	if err != nil {
+		t.Error(err)
+	}
+
 	v.files = map[string]*desc.FileDescriptor{
 		"annotated_test.proto":    barDesc.GetFile(),
 		"remote_definition.proto": remoteDef.GetFile(),
@@ -373,6 +378,7 @@ func TestValidateMessage(t *testing.T) {
 	}{
 		{name: "valid resource", want: "", msg: fooDef},
 		{name: "valid references", want: "", msg: barDesc},
+		{name: "well-known  resource", want: "", msg: quxDesc},
 		{name: "invalid resource, missing pattern & name", want: fmt.Sprintf(resMissingPattern+"; "+resMissingNameField, wibbleDesc.GetFullyQualifiedName(), wibbleDesc.GetFullyQualifiedName()), msg: wibbleDesc},
 		{name: "invalid resource, missing type", want: fmt.Sprintf(resMissingType, wobbleDesc.GetFullyQualifiedName()), msg: wobbleDesc},
 		{name: "invalid resource, bad type kind format & length", want: fmt.Sprintf(resTypeKindInvalid+"; "+resTypeKindTooLong, invalidRTK, wubbleDesc.GetFullyQualifiedName(), maxCharRescTypeKind), msg: wubbleDesc},

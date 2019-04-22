@@ -20,9 +20,7 @@ func (v *validator) resolveResRefMessage(typ, serv string, file *desc.FileDescri
 		return m
 	}
 
-	// check known resources using serv
-	//
-	// TODO(ndietz)
+	// full := serv + "/" + typ
 
 	// check configured types using serv
 	//
