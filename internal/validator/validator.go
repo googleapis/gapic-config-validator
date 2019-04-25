@@ -16,6 +16,7 @@ package validator
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
@@ -43,9 +44,29 @@ const (
 	fieldComponentRepeated = "rpc %q method signature entry field %q cannot be a field within a repeated field"
 
 	// resource reslated errors
-	resRefNotValidMessage    = "unable to resolve resource reference for field %q: value %q is not a valid message"
-	resRefNotAnnotated       = "unable to resolve resource reference for field %q: field %q is not annotated as a resource"
-	resSetEntryMissingSymbol = "resource set entry for field %q with pattern %q missing field google.api.resource.symbol"
+	resRefNotValidMessage   = "unable to resolve resource reference for field %q: value %q is not a valid message"
+	resRefNotAnnotated      = "unable to resolve resource reference for field %q: message %q is not annotated as a resource"
+	resRefFieldDNE          = "unable to resolve resource reference for field %q: field does not exist or is not defined on message %q"
+	resRefInvalidTypeFormat = "resource_reference.(child_)type for field %q must be {service_name}/{resource_type_kind}"
+	resMissingType          = "resource for message %q missing field google.api.resource.type"
+	resInvalidTypeFormat    = "resource.(child_)type for message %q must be {service_name}/{resource_type_kind}"
+	resTypeKindInvalid      = "resource_type_kind %q has invalid format, must match regexp [A-Z][a-zA-Z0-9]+"
+	resTypeKindTooLong      = "resource_type_kind in message %q must not be longer than %d characters"
+	resMissingPattern       = "field %q resource missing pattern definition"
+	resMissingNameField     = "resource message %q missing a name field"
+
+	maxCharRescTypeKind = 100
+)
+
+var (
+	resourceTypeKindRegexp *regexp.Regexp
+	wellKnownTypes         = map[string]bool{
+		"cloudresourcemanager.googleapis.com/Project":      true,
+		"cloudresourcemanager.googleapis.com/Organization": true,
+		"cloudresourcemanager.googleapis.com/Folder":       true,
+		"cloud.googleapis.com/Location":                    true,
+		"cloudbilling.googleapis.com/BillingAccount":       true,
+	}
 )
 
 // Validate ensures that the given input protos have valid
@@ -53,6 +74,8 @@ const (
 func Validate(req *plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorResponse, error) {
 	var v validator
 	var err error
+
+	resourceTypeKindRegexp = regexp.MustCompile("[A-Z][a-zA-Z0-9]+")
 
 	v.files, err = desc.CreateFileDescriptors(req.GetProtoFile())
 	if err != nil {
@@ -123,13 +146,13 @@ func (v *validator) validateMethod(method *desc.MethodDescriptor) {
 
 			if res := lro.GetResponseType(); res == "" {
 				v.addError(missingLROResponseType, mFQN)
-			} else if v.resolveReference(res, method.GetFile()) == nil {
+			} else if v.resolveMsgReference(res, method.GetFile()) == nil {
 				v.addError(unresolvableLROResponseType, res, mFQN)
 			}
 
 			if meta := lro.GetMetadataType(); meta == "" {
 				v.addError(missingLROMetadataType, mFQN)
-			} else if v.resolveReference(meta, method.GetFile()) == nil {
+			} else if v.resolveMsgReference(meta, method.GetFile()) == nil {
 				v.addError(unresolvableLROMetadataType, meta, mFQN)
 			}
 		}
@@ -213,44 +236,89 @@ func (v *validator) validateMethod(method *desc.MethodDescriptor) {
 }
 
 func (v *validator) validateMessage(msg *desc.MessageDescriptor) {
+	// validate message resource
+	if eRes, err := ext(msg.GetMessageOptions(), annotations.E_Resource); err == nil {
+		res := eRes.(*annotations.ResourceDescriptor)
+
+		// missing resource.pattern
+		if len(res.GetPattern()) == 0 {
+			v.addError(resMissingPattern, msg.GetFullyQualifiedName())
+		}
+
+		// missing resource.type
+		if typ := res.GetType(); typ == "" {
+			v.addError(resMissingType, msg.GetFullyQualifiedName())
+		} else {
+			// validate resource.type format
+			if split := strings.Split(typ, "/"); len(split) != 2 {
+				v.addError(resInvalidTypeFormat, msg.GetFullyQualifiedName())
+			} else {
+				typ = split[1]
+				v.validateRescTypeKind(typ, msg)
+			}
+		}
+
+		fname := "name"
+		if n := res.GetNameField(); n != "" {
+			fname = n
+		}
+
+		if f := msg.FindFieldByName(fname); f == nil {
+			// missing resource name field
+			v.addError(resMissingNameField, msg.GetFullyQualifiedName())
+		}
+	}
+
 	for _, field := range msg.GetFields() {
 		// validate individual resource reference
 		if eRef, err := ext(field.GetFieldOptions(), annotations.E_ResourceReference); err == nil {
-			v.validateResRef(*eRef.(*string), field)
-		} else if eResSet, err := ext(field.GetFieldOptions(), annotations.E_ResourceSet); err == nil {
-			// validate field resource_set
-			set := eResSet.(*annotations.ResourceSet)
-
-			for _, res := range set.GetResources() {
-				if res.GetSymbol() == "" {
-					v.addError(
-						resSetEntryMissingSymbol,
-						field.GetFullyQualifiedName(),
-						res.GetPattern(),
-					)
-				}
-			}
-
-			for _, ref := range set.GetResourceReferences() {
-				v.validateResRef(ref, field)
-			}
+			v.validateResRef(eRef.(*annotations.ResourceReference), field)
 		}
+	}
+}
+
+// validateRescTypeKind ensures that the resource_type_kind component
+// of a resource.type conforms to the required format and length.
+func (v *validator) validateRescTypeKind(rtk string, msg *desc.MessageDescriptor) {
+	if !resourceTypeKindRegexp.MatchString(rtk) {
+		v.addError(resTypeKindInvalid, rtk)
+	}
+
+	if len(rtk) > maxCharRescTypeKind {
+		v.addError(resTypeKindTooLong, msg.GetFullyQualifiedName(), maxCharRescTypeKind)
 	}
 }
 
 // validateResRef ensures that the given resource_reference is resolvable
 // within the field's file or the file set.
-func (v *validator) validateResRef(name string, field *desc.FieldDescriptor) {
-	if refMsg := v.resolveReference(name, field.GetFile()); refMsg == nil {
-		v.addError(resRefNotValidMessage, field.GetFullyQualifiedName(), name)
-	} else if refMsg.GetFullyQualifiedName() != "google.api.Resource" {
-		// field referenced is not annotated or is annotated improperly as a resource
-		eRef, err := ext(
-			refMsg.FindFieldByName(field.GetName()).GetFieldOptions(),
-			annotations.E_Resource,
-		)
+func (v *validator) validateResRef(ref *annotations.ResourceReference, field *desc.FieldDescriptor) {
+	typ := ref.GetType()
 
-		if err != nil || (eRef.(*annotations.Resource)).Pattern == "" {
+	if typ == "" {
+		typ = ref.GetChildType()
+	}
+
+	// check well-known types
+	if wellKnownTypes[typ] {
+		return
+	}
+
+	split := strings.Split(typ, "/")
+
+	if len(split) != 2 {
+		v.addError(resRefInvalidTypeFormat, field.GetFullyQualifiedName())
+		return
+	}
+
+	serv := split[0]
+	typ = split[1]
+
+	refMsg := v.resolveResRefMessage(typ, serv, field.GetFile())
+
+	if refMsg == nil {
+		v.addError(resRefNotValidMessage, field.GetFullyQualifiedName(), typ)
+	} else if refMsg.GetFullyQualifiedName() != "google.api.Resource" {
+		if _, err := ext(refMsg.GetMessageOptions(), annotations.E_Resource); err != nil {
 			v.addError(
 				resRefNotAnnotated,
 				field.GetFullyQualifiedName(),
@@ -273,65 +341,6 @@ func (v *validator) addError(err string, info ...interface{}) {
 	}
 
 	v.resp.Error = proto.String(err)
-}
-
-// resolveReference finds the MessageDescriptor for a fully qualified name
-// of an operation_info.response_type or operation_info.metadata_type.
-func (v *validator) resolveReference(name string, file *desc.FileDescriptor) *desc.MessageDescriptor {
-	if name == "" {
-		return nil
-	}
-
-	// not a fully qualified name, make it one and check in parent file
-	//
-	// TODO(ndietz) this will break if the name refs a nested message
-	// in the parent file
-	if !strings.Contains(name, ".") {
-		if msg := file.FindMessage(file.GetPackage() + "." + name); msg != nil {
-			return msg
-		}
-
-		if msg := resolveFileResourceDef(name, file); msg != nil {
-			return msg
-		}
-	}
-
-	localMsgName := name[strings.LastIndex(name, ".")+1:]
-
-	// this Message must be imported, check validator's file set.
-	// Iterating over the entire set isn't ideal, but necessary
-	// when searching for single message name in all protos
-	for _, f := range v.files {
-		if msg := f.FindMessage(name); msg != nil {
-			return msg
-		}
-
-		if msg := resolveFileResourceDef(localMsgName, f); msg != nil {
-			return msg
-		}
-	}
-
-	return nil
-}
-
-// resolveFileResourceDef attempts to resolve the resource_reference
-// name either within the given file or the validator's file set
-// as a File-level resource_definition.
-func resolveFileResourceDef(name string, file *desc.FileDescriptor) *desc.MessageDescriptor {
-	eResDefs, err := ext(file.GetFileOptions(), annotations.E_ResourceDefinition)
-	if err != nil {
-		return nil
-	}
-
-	resDefs := eResDefs.([]*annotations.Resource)
-	for _, resDef := range resDefs {
-		if resDef.GetSymbol() == name {
-			m, _ := desc.LoadMessageDescriptorForMessage(resDef)
-			return m
-		}
-	}
-
-	return nil
 }
 
 // ext wraps proto.GetExtension

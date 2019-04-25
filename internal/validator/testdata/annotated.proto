@@ -21,18 +21,14 @@ package annotated;
 
 option go_package = "github.com/googleapis/gapic-config-validator/internal/validator/testdata;testdata";
 
-option (google.api.resource_definition) = {
-  pattern: "projects/{project}/ref/{ref}"
-  symbol: "Ref"
-};
-
-option (google.api.resource_definition) = {
-  pattern: "projects/{project}/def/{def}"
-  symbol: "Def"
-};
-
 message Foo {
-  string a = 1 [(google.api.resource).pattern = "projects/{project}/foo/{foo}"];
+  option (google.api.resource) = {
+    type: "foo.bar.com/Foo"
+    pattern: "projects/{project}/foo/{foo}"
+    name_field: "a"
+  };
+
+  string a = 1;
 
   Bar bar = 2;
 
@@ -44,38 +40,60 @@ message Bar {
 
   Baz baz = 2;
 
-  string a = 3 [(google.api.resource_reference) = "Foo"];
+  string a = 3 [(google.api.resource_reference).type = "foo.bar.com/Foo"];
 
-  string def = 4 [(google.api.resource_reference) = "Def"];
+  string def = 4;
 
-  string remote = 5 [(google.api.resource_reference) = "Remote"];
+  string remote = 5 [(google.api.resource_reference).child_type = "foobar.api.com/FooBar"];
 }
 
 message Baz {
-  string c = 1 [(google.api.resource_reference) = ""];
+  string c = 1 [(google.api.resource_reference).type = ""];
 
   repeated Biz biz = 2;
 }
 
 message Biz {
-  string d = 1 [(google.api.resource_reference) = "Buz"];
+  string d = 1 [(google.api.resource_reference).type = "foo.bar.com/Buz"];
 
-  string e = 2 [(google.api.resource_reference) = "Qux"];
+  string e = 2 [(google.api.resource_reference).type = "foo.bar.com/Qux"];
 }
 
 message Qux {
-  string req = 1 [(google.api.resource_reference) = "Foo"];
+  string req = 1 [(google.api.resource_reference).type = "cloud.googleapis.com/Location"];
 
-  string e = 2 [(google.api.resource).pattern = ""];
+  string e = 2;
 }
 
-message Quuz {
-  string f = 1 [(google.api.resource_set) = {
-    resources: [{pattern: "missing/{symbol}"}]
-  }];
-
-  string a = 2 [(google.api.resource_set) = {
-    resource_references: ["Foo"]
-  }];
+message Wibble {
+  option (google.api.resource) = {
+    type: "abc.def.com/Wibble"
+  };
 }
 
+message Wobble {
+  option (google.api.resource) = {
+    type: ""
+    pattern: "missing/{type}"
+  };
+
+  string name = 1;
+}
+
+message Wubble {
+  option (google.api.resource) = {
+    type: "badresource_type_kind/badresource_type_kindbadresource_type_kindbadresource_type_kindbadresource_type_kindbadresource_type_kind"
+    pattern: "bad/{resource_type_kind}"
+  };
+  
+  string name = 1;
+}
+
+message Flob {
+  option (google.api.resource) = {
+    type: "missing_service_name"
+    pattern: "bad/{resource_type_kind}"
+  };
+  
+  string name = 1;
+}
