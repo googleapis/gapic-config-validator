@@ -38,6 +38,21 @@ func (v *validator) resolveResRefMessage(typ, serv string, file *desc.FileDescri
 				if m := f.FindMessage(f.GetPackage() + "." + typ); m != nil {
 					return m
 				}
+
+				// check every message in the service file
+				// for one that is annotated with the resource type
+				for _, m := range f.GetMessageTypes() {
+					eRes, err := ext(m.GetMessageOptions(), annotations.E_Resource)
+					if err != nil {
+						continue
+					}
+					res := eRes.(*annotations.ResourceDescriptor)
+					split := strings.Split(res.GetType(), "/")
+
+					if len(split) > 1 && split[1] == typ {
+						return m
+					}
+				}
 			}
 		}
 	}

@@ -14,12 +14,17 @@
 
 syntax = "proto3";
 
+import "google/api/client.proto";
 import "google/api/field_behavior.proto";
 import "google/api/resource.proto";
 
 package annotated;
 
 option go_package = "github.com/googleapis/gapic-config-validator/internal/validator/testdata;testdata";
+
+service FooService {
+  option (google.api.default_host) = "foo.bar.com";
+}
 
 message Foo {
   option (google.api.resource) = {
@@ -48,9 +53,16 @@ message Bar {
 }
 
 message Baz {
+  option (google.api.resource) = {
+    type: "foo.bar.com/Diff"
+    pattern: "baz/biz/buz"
+  };
+
   string c = 1 [(google.api.resource_reference).type = ""];
 
   repeated Biz biz = 2;
+
+  string name = 3;
 }
 
 message Biz {
@@ -96,4 +108,8 @@ message Flob {
   };
   
   string name = 1;
+}
+
+message Waldo {
+  string name = 1 [(google.api.resource_reference).type = "foo.bar.com/Diff"];
 }
