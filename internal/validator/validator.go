@@ -311,9 +311,7 @@ func (v *validator) addError(err string, info ...interface{}) {
 		err = fmt.Sprintf(err, info...)
 	}
 
-	if existing := v.resp.GetError(); existing != "" {
-		err = fmt.Sprintf("%s; %s", existing, err)
-	}
+	err = fmt.Sprintf("%s\n%s", v.resp.GetError(), err)
 
 	v.resp.Error = proto.String(err)
 }

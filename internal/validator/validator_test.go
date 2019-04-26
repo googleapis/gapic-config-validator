@@ -65,7 +65,7 @@ func TestValidateFile(t *testing.T) {
 		name, want string
 		file       *desc.FileDescriptor
 	}{
-		{name: "missing default_host in Service", want: fmt.Sprintf(missingDefaultHost, missingServ.GetName()), file: missing},
+		{name: "missing default_host in Service", want: fmt.Sprintf("\n"+missingDefaultHost, missingServ.GetName()), file: missing},
 	} {
 		v.validate(tst.file)
 
@@ -114,10 +114,10 @@ func TestValidateService(t *testing.T) {
 		name, want string
 		serv       *desc.ServiceDescriptor
 	}{
-		{name: "missing default_host", want: fmt.Sprintf(missingDefaultHost, missing.GetFullyQualifiedName()), serv: missing},
-		{name: "empty default_host value", want: fmt.Sprintf(emptyDefaultHost, empty.GetFullyQualifiedName()), serv: empty},
+		{name: "missing default_host", want: fmt.Sprintf("\n"+missingDefaultHost, missing.GetFullyQualifiedName()), serv: missing},
+		{name: "empty default_host value", want: fmt.Sprintf("\n"+emptyDefaultHost, empty.GetFullyQualifiedName()), serv: empty},
 		{name: "valid default_host value", want: "", serv: valid},
-		{name: "no ServiceOptions", want: fmt.Sprintf(missingDefaultHost, none.GetFullyQualifiedName()), serv: none},
+		{name: "no ServiceOptions", want: fmt.Sprintf("\n"+missingDefaultHost, none.GetFullyQualifiedName()), serv: none},
 	} {
 		v.validateService(tst.serv)
 
@@ -217,10 +217,10 @@ func TestValidateMethod_LRO(t *testing.T) {
 		name, want string
 		mthd       *desc.MethodDescriptor
 	}{
-		{name: "no Method options", want: fmt.Sprintf(missingLROInfo, none.GetFullyQualifiedName()), mthd: none},
-		{name: "missing operation_info", want: fmt.Sprintf(missingLROInfo, missing.GetFullyQualifiedName()), mthd: missing},
-		{name: "missing response_type & metadata_type", want: fmt.Sprintf(missingLROResponseType+"; "+missingLROMetadataType, missingTypes.GetFullyQualifiedName(), missingTypes.GetFullyQualifiedName()), mthd: missingTypes},
-		{name: "unresolvable response_type & metadata_type", want: fmt.Sprintf(unresolvableLROResponseType+"; "+unresolvableLROMetadataType, uInfo.GetResponseType(), unresolvable.GetFullyQualifiedName(), uInfo.GetMetadataType(), unresolvable.GetFullyQualifiedName()), mthd: unresolvable},
+		{name: "no Method options", want: fmt.Sprintf("\n"+missingLROInfo, none.GetFullyQualifiedName()), mthd: none},
+		{name: "missing operation_info", want: fmt.Sprintf("\n"+missingLROInfo, missing.GetFullyQualifiedName()), mthd: missing},
+		{name: "missing response_type & metadata_type", want: fmt.Sprintf("\n"+missingLROResponseType+"\n"+missingLROMetadataType, missingTypes.GetFullyQualifiedName(), missingTypes.GetFullyQualifiedName()), mthd: missingTypes},
+		{name: "unresolvable response_type & metadata_type", want: fmt.Sprintf("\n"+unresolvableLROResponseType+"\n"+unresolvableLROMetadataType, uInfo.GetResponseType(), unresolvable.GetFullyQualifiedName(), uInfo.GetMetadataType(), unresolvable.GetFullyQualifiedName()), mthd: unresolvable},
 		{name: "valid LRO operation_info", want: "", mthd: valid},
 	} {
 		v.validateMethod(tst.mthd)
@@ -273,7 +273,7 @@ func TestValidateMethod_MethodSignature(t *testing.T) {
 	}{
 		{
 			name: "method_signature all",
-			want: fmt.Sprintf(fieldComponentRepeated+"; "+fieldDNE+"; "+fieldDNE+"; "+fieldDNE,
+			want: fmt.Sprintf("\n"+fieldComponentRepeated+"\n"+fieldDNE+"\n"+fieldDNE+"\n"+fieldDNE,
 				// fieldComponentRepeated
 				method.GetFullyQualifiedName(),
 				sigs[0],
@@ -380,12 +380,12 @@ func TestValidateMessage(t *testing.T) {
 		{name: "valid references", want: "", msg: barDesc},
 		{name: "valid reference, diff type name", want: "", msg: waldoDesc},
 		{name: "well-known  resource", want: "", msg: quxDesc},
-		{name: "invalid resource, missing pattern & name", want: fmt.Sprintf(resMissingPattern+"; "+resMissingNameField, wibbleDesc.GetFullyQualifiedName(), wibbleDesc.GetFullyQualifiedName()), msg: wibbleDesc},
-		{name: "invalid resource, missing type", want: fmt.Sprintf(resMissingType, wobbleDesc.GetFullyQualifiedName()), msg: wobbleDesc},
-		{name: "invalid resource, bad type kind format & length", want: fmt.Sprintf(resTypeKindInvalid+"; "+resTypeKindTooLong, invalidRTK, wubbleDesc.GetFullyQualifiedName(), maxCharRescTypeKind), msg: wubbleDesc},
-		{name: "invalid resource, invalid type format", want: fmt.Sprintf(resInvalidTypeFormat, flobDesc.GetFullyQualifiedName()), msg: flobDesc},
-		{name: "unresolvable top-lvl resource ref & not annotated, empty", want: fmt.Sprintf(resRefNotValidMessage+"; "+resRefNotAnnotated, "annotated.Biz.d", "Buz", "annotated.Biz.e", "annotated.Qux.e"), msg: bizDesc},
-		{name: "unresolvable top-lvl resource ref, empty", want: fmt.Sprintf(resRefInvalidTypeFormat, "annotated.Baz.c"), msg: bazDesc},
+		{name: "invalid resource, missing pattern & name", want: fmt.Sprintf("\n"+resMissingPattern+"\n"+resMissingNameField, wibbleDesc.GetFullyQualifiedName(), wibbleDesc.GetFullyQualifiedName()), msg: wibbleDesc},
+		{name: "invalid resource, missing type", want: fmt.Sprintf("\n"+resMissingType, wobbleDesc.GetFullyQualifiedName()), msg: wobbleDesc},
+		{name: "invalid resource, bad type kind format & length", want: fmt.Sprintf("\n"+resTypeKindInvalid+"\n"+resTypeKindTooLong, invalidRTK, wubbleDesc.GetFullyQualifiedName(), maxCharRescTypeKind), msg: wubbleDesc},
+		{name: "invalid resource, invalid type format", want: fmt.Sprintf("\n"+resInvalidTypeFormat, flobDesc.GetFullyQualifiedName()), msg: flobDesc},
+		{name: "unresolvable top-lvl resource ref & not annotated, empty", want: fmt.Sprintf("\n"+resRefNotValidMessage+"\n"+resRefNotAnnotated, "annotated.Biz.d", "Buz", "annotated.Biz.e", "annotated.Qux.e"), msg: bizDesc},
+		{name: "unresolvable top-lvl resource ref, empty", want: fmt.Sprintf("\n"+resRefInvalidTypeFormat, "annotated.Baz.c"), msg: bazDesc},
 	} {
 		v.validateMessage(tst.msg)
 
