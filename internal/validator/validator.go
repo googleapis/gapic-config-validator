@@ -274,7 +274,7 @@ func (v *validator) validateResRef(ref *annotations.ResourceReference, field *de
 	}
 
 	// check well-known types
-	if wellKnownTypes[typ] {
+	if wellKnownTypes[typ] || typ == "*" {
 		return
 	}
 
