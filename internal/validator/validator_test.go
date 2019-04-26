@@ -248,7 +248,6 @@ func TestValidateMethod_MethodSignature(t *testing.T) {
 	payload := builder.RpcTypeImportedMessage(fooDesc, false)
 
 	sigs := []string{
-		"a,req",         // invalid, required after optional
 		"bar.baz.biz.d", // invalid, field component is repeated
 		"dne",           // invalid, top-level field doesn't exist
 		"bar.dne.c",     // invalid, nested field component doesn't exist
@@ -274,28 +273,24 @@ func TestValidateMethod_MethodSignature(t *testing.T) {
 	}{
 		{
 			name: "method_signature all",
-			want: fmt.Sprintf(requiredAfterOptional+"; "+fieldComponentRepeated+"; "+fieldDNE+"; "+fieldDNE+"; "+fieldDNE,
-				// requiredAfterOptional
-				method.GetFullyQualifiedName(),
-				sigs[0],
-				"req",
+			want: fmt.Sprintf(fieldComponentRepeated+"; "+fieldDNE+"; "+fieldDNE+"; "+fieldDNE,
 				// fieldComponentRepeated
 				method.GetFullyQualifiedName(),
-				sigs[1],
+				sigs[0],
 				// fieldDNE
 				"dne",
 				method.GetFullyQualifiedName(),
-				sigs[2],
+				sigs[1],
 				fooDesc.GetFullyQualifiedName(),
 				// fieldDNE
 				"bar.dne.c",
 				method.GetFullyQualifiedName(),
-				sigs[3],
+				sigs[2],
 				fooDesc.GetFullyQualifiedName(),
 				// fieldDNE
 				"bar.dne",
 				method.GetFullyQualifiedName(),
-				sigs[4],
+				sigs[3],
 				fooDesc.GetFullyQualifiedName(),
 			),
 			mthd: method,

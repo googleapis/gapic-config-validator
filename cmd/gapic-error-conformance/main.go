@@ -224,27 +224,6 @@ func scenarios() []scenario {
 		Parameter:      proto.String(opts),
 	}
 
-	// required field cannot follow optional in method_signature
-	badOrderSigMOpts := &descriptor.MethodOptions{}
-	proto.SetExtension(
-		badOrderSigMOpts,
-		annotations.E_MethodSignature,
-		[]string{"b,a"},
-	)
-
-	badOrderSigFdOpts := &descriptor.FieldOptions{}
-	proto.SetExtension(
-		badOrderSigFdOpts,
-		annotations.E_FieldBehavior,
-		[]annotations.FieldBehavior{annotations.FieldBehavior_REQUIRED},
-	)
-
-	badOrderSig := &plugin.CodeGeneratorRequest{
-		FileToGenerate: []string{"foo.proto"},
-		ProtoFile:      append(common, buildProto(nil, nil, badOrderSigMOpts, badOrderSigFdOpts, false)),
-		Parameter:      proto.String(opts),
-	}
-
 	// unresolvable field in method_signature entry
 	badCompSigOpts := &descriptor.MethodOptions{}
 	proto.SetExtension(
@@ -298,7 +277,6 @@ func scenarios() []scenario {
 		{name: "unresolvable LRO response_type", req: badRespInfo},
 		{name: "unresolvable LRO metadata_type", req: badMetaType},
 		{name: "bad method_signature field", req: badSigField},
-		{name: "bad order of method_signature fields", req: badOrderSig},
 		{name: "repeated nested field component in method_signature", req: badCompSig},
 		{name: "unresolvable Message for resource_reference", req: refDNE},
 		{name: "resource_reference to unannotated field", req: unannotatedRef},
