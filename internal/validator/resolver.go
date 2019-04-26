@@ -28,31 +28,22 @@ func (v *validator) resolveResRefMessage(typ, serv string, file *desc.FileDescri
 	// services is not ideal, but the unified
 	// resource design will go through some churn
 	for _, f := range v.files {
-		for _, s := range f.GetServices() {
-			eHost, err := ext(s.GetServiceOptions(), annotations.E_DefaultHost)
+		if m := f.FindMessage(f.GetPackage() + "." + typ); m != nil {
+			return m
+		}
+
+		// check every message in the service file
+		// for one that is annotated with the resource type
+		for _, m := range f.GetMessageTypes() {
+			eRes, err := ext(m.GetMessageOptions(), annotations.E_Resource)
 			if err != nil {
 				continue
 			}
+			res := eRes.(*annotations.ResourceDescriptor)
 
-			if serv == *eHost.(*string) {
-				if m := f.FindMessage(f.GetPackage() + "." + typ); m != nil {
-					return m
-				}
-
-				// check every message in the service file
-				// for one that is annotated with the resource type
-				for _, m := range f.GetMessageTypes() {
-					eRes, err := ext(m.GetMessageOptions(), annotations.E_Resource)
-					if err != nil {
-						continue
-					}
-					res := eRes.(*annotations.ResourceDescriptor)
-					split := strings.Split(res.GetType(), "/")
-
-					if len(split) > 1 && split[1] == typ {
-						return m
-					}
-				}
+			t := serv + "/" + typ
+			if t == res.GetType() {
+				return m
 			}
 		}
 	}

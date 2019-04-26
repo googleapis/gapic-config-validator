@@ -22,10 +22,6 @@ package annotated;
 
 option go_package = "github.com/googleapis/gapic-config-validator/internal/validator/testdata;testdata";
 
-service FooService {
-  option (google.api.default_host) = "foo.bar.com";
-}
-
 message Foo {
   option (google.api.resource) = {
     type: "foo.bar.com/Foo"
@@ -74,7 +70,7 @@ message Biz {
 message Qux {
   string req = 1 [(google.api.resource_reference).type = "cloud.googleapis.com/Location"];
 
-  string e = 2;
+  string e = 2 [(google.api.resource_reference).type = "*"];
 }
 
 message Wibble {
