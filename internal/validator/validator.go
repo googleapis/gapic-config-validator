@@ -167,7 +167,6 @@ func (v *validator) validateMethod(method *desc.MethodDescriptor) {
 		for _, sig := range sigs {
 			// individual method signatures are a comma-delimited string of fields
 			fields := strings.Split(sig, ",")
-			seenOptional := false
 
 			for _, field := range fields {
 				f := input.FindFieldByName(field)
@@ -205,30 +204,6 @@ func (v *validator) validateMethod(method *desc.MethodDescriptor) {
 						sig,
 						input.GetFullyQualifiedName(),
 					)
-				} else if eBehavior, err := ext(f.GetFieldOptions(), annotations.E_FieldBehavior); err == nil {
-					behaviors := eBehavior.([]annotations.FieldBehavior)
-
-					// validate order of required & optional fields
-					for _, b := range behaviors {
-						if b == annotations.FieldBehavior_REQUIRED && seenOptional {
-							v.addError(
-								requiredAfterOptional,
-								method.GetFullyQualifiedName(),
-								sig,
-								field,
-							)
-
-							break
-						}
-
-						if b == annotations.FieldBehavior_OPTIONAL {
-							seenOptional = true
-							break
-						}
-					}
-				} else {
-					// if no field_behavior is specified, the field is optional
-					seenOptional = true
 				}
 			}
 		}

@@ -2,3 +2,4 @@ validator.cov
 gapic-config-validator-*.tar.gz
 
 .vscode
+.DS_Store
