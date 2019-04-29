@@ -11,14 +11,14 @@ import (
 // resolveResRefMessage finds the MessageDescriptor of a
 // resource_reference's given type. It attempts to
 // resolve the type in the local file before consulting
-// a list of known resource types.
-func (v *validator) resolveResRefMessage(typ, serv string, file *desc.FileDescriptor) *desc.MessageDescriptor {
+// a all available files in the file set.
+func (v *validator) resolveResRefMessage(typ string, file *desc.FileDescriptor) *desc.MessageDescriptor {
 	if typ == "" {
 		return nil
 	}
 
-	// check local file
-	if m := file.FindMessage(file.GetPackage() + "." + typ); m != nil {
+	// check local file first
+	if m := v.resolveResRefType(typ, file); m != nil {
 		return m
 	}
 
@@ -28,23 +28,26 @@ func (v *validator) resolveResRefMessage(typ, serv string, file *desc.FileDescri
 	// services is not ideal, but the unified
 	// resource design will go through some churn
 	for _, f := range v.files {
-		if m := f.FindMessage(f.GetPackage() + "." + typ); m != nil {
+		if m := v.resolveResRefType(typ, f); m != nil {
 			return m
 		}
+	}
 
-		// check every message in the service file
-		// for one that is annotated with the resource type
-		for _, m := range f.GetMessageTypes() {
-			eRes, err := ext(m.GetMessageOptions(), annotations.E_Resource)
-			if err != nil {
-				continue
-			}
-			res := eRes.(*annotations.ResourceDescriptor)
+	return nil
+}
 
-			t := serv + "/" + typ
-			if t == res.GetType() {
-				return m
-			}
+// resolveResRefType checks every message in the file
+// for one that is annotated with the resource type
+func (v *validator) resolveResRefType(typ string, f *desc.FileDescriptor) *desc.MessageDescriptor {
+	for _, m := range f.GetMessageTypes() {
+		eRes, err := ext(m.GetMessageOptions(), annotations.E_Resource)
+		if err != nil {
+			continue
+		}
+		res := eRes.(*annotations.ResourceDescriptor)
+
+		if typ == res.GetType() {
+			return m
 		}
 	}
 

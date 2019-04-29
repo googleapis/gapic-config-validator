@@ -27,7 +27,7 @@ service FooBarService {
 
 message FooBar {
   option (google.api.resource) = {
-    type: "remote.foo.com/FooBar"
+    type: "foobar.api.com/FooBar"
     pattern: "projects/{project}/remotes/{remote}"
   };
 

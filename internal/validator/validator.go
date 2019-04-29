@@ -44,8 +44,7 @@ const (
 	fieldComponentRepeated = "rpc %q method signature entry field %q cannot be a field within a repeated field"
 
 	// resource reslated errors
-	resRefNotValidMessage   = "unable to resolve resource reference for field %q: value %q is not a valid message"
-	resRefNotAnnotated      = "unable to resolve resource reference for field %q: message %q is not annotated as a resource"
+	resRefNotValidResource  = "unable to resolve resource reference for field %q: value %q is not a valid resource"
 	resRefFieldDNE          = "unable to resolve resource reference for field %q: field does not exist or is not defined on message %q"
 	resRefInvalidTypeFormat = "resource_reference.(child_)type for field %q must be {service_name}/{resource_type_kind}"
 	resMissingType          = "resource for message %q missing field google.api.resource.type"
@@ -278,28 +277,15 @@ func (v *validator) validateResRef(ref *annotations.ResourceReference, field *de
 		return
 	}
 
-	split := strings.Split(typ, "/")
-
-	if len(split) != 2 {
+	if split := strings.Split(typ, "/"); len(split) != 2 {
 		v.addError(resRefInvalidTypeFormat, field.GetFullyQualifiedName())
 		return
 	}
 
-	serv := split[0]
-	typ = split[1]
-
-	refMsg := v.resolveResRefMessage(typ, serv, field.GetFile())
+	refMsg := v.resolveResRefMessage(typ, field.GetFile())
 
 	if refMsg == nil {
-		v.addError(resRefNotValidMessage, field.GetFullyQualifiedName(), typ)
-	} else if refMsg.GetFullyQualifiedName() != "google.api.Resource" {
-		if _, err := ext(refMsg.GetMessageOptions(), annotations.E_Resource); err != nil {
-			v.addError(
-				resRefNotAnnotated,
-				field.GetFullyQualifiedName(),
-				refMsg.GetFullyQualifiedName()+"."+field.GetName(),
-			)
-		}
+		v.addError(resRefNotValidResource, field.GetFullyQualifiedName(), typ)
 	}
 }
 
