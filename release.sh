@@ -16,7 +16,7 @@
 
 set -e
 
-VERSION=0.2.2
+VERSION=0.2.3
 
 # linux-amd64
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ./cmd/protoc-gen-gapic-validator
