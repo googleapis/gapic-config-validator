@@ -61,6 +61,11 @@ message Baz {
   string name = 3;
 }
 
+// Message with same name as a resource type for resolution testing.
+message Diff {
+  string name = 1;
+}
+
 message Biz {
   string d = 1 [(google.api.resource_reference).type = "foo.bar.com/Buz"];
 
