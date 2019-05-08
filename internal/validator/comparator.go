@@ -6,16 +6,22 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"google.golang.org/genproto/googleapis/longrunning"
-
-	"google.golang.org/genproto/googleapis/api/annotations"
-
-	"github.com/jhump/protoreflect/desc"
-
-	"github.com/golang/protobuf/jsonpb"
-
 	"github.com/ghodss/yaml"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/googleapis/gapic-config-validator/internal/config"
+	"github.com/jhump/protoreflect/desc"
+	"google.golang.org/genproto/googleapis/api/annotations"
+	"google.golang.org/genproto/googleapis/longrunning"
+)
+
+var (
+	wellKnownPatterns = map[string]bool{
+		"projects/{project}":                      true,
+		"organizations/{organization}":            true,
+		"folders/{folder}":                        true,
+		"projects/{project}/locations/{location}": true,
+		"billingAccounts/{billing_account_id}":    true,
+	}
 )
 
 func (v *validator) compare() {
@@ -127,6 +133,10 @@ Behavior:
 
 func (v *validator) compareResources(inter *config.InterfaceConfigProto) {
 	for _, res := range inter.GetCollections() {
+		if wellKnownPatterns[res.GetNamePattern()] {
+			continue
+		}
+
 		for _, f := range v.files {
 			for _, m := range f.GetMessageTypes() {
 				eRes, err := ext(m.GetMessageOptions(), annotations.E_Resource)
@@ -150,6 +160,7 @@ func (v *validator) compareResources(inter *config.InterfaceConfigProto) {
 				}
 			}
 		}
+
 		v.addError("No corresponding resource definition for %q: %q", res.GetEntityName(), res.GetNamePattern())
 
 	Next:
@@ -187,8 +198,8 @@ func (v *validator) compareResourceRefs() {
 				continue
 			}
 
-			typ = strings.ToLower(typ[strings.Index(typ, "/")+1:])
-			if typ != ref {
+			t := strings.ToLower(typ[strings.Index(typ, "/")+1:])
+			if !wellKnownTypes[typ] || t != ref {
 				v.addError("Field %q resource_type_kind %q doesn't match %q in config", field.GetFullyQualifiedName(), typ, ref)
 			}
 		}
