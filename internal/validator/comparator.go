@@ -59,6 +59,7 @@ func (v *validator) compareMethod(methodDesc *desc.MethodDescriptor, method *con
 		eSigs, err := ext(mOpts, annotations.E_MethodSignature)
 		if err != nil {
 			v.addError("Method %q missing method_signature(s) for flattening(s)", fqn)
+			goto LRO
 		}
 		sigs := eSigs.([]string)
 
@@ -70,11 +71,13 @@ func (v *validator) compareMethod(methodDesc *desc.MethodDescriptor, method *con
 		}
 	}
 
+LRO:
 	// compare operation_info & longrunning config
 	if lro := method.GetLongRunning(); lro != nil {
 		eLRO, err := ext(mOpts, longrunning.E_OperationInfo)
 		if err != nil {
 			v.addError("Method %q missing longrunning.operation_info", fqn)
+			goto Behavior
 		}
 		info := eLRO.(*longrunning.OperationInfo)
 
@@ -93,6 +96,7 @@ func (v *validator) compareMethod(methodDesc *desc.MethodDescriptor, method *con
 		}
 	}
 
+Behavior:
 	// compare input message field_behaviors & required_fields
 	if reqs := method.GetRequiredFields(); len(reqs) > 0 {
 		input := methodDesc.GetInputType()
