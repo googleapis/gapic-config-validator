@@ -19,6 +19,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/googleapis/gapic-config-validator/internal/config"
+
 	"github.com/golang/protobuf/proto"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/jhump/protoreflect/desc"
@@ -81,6 +83,15 @@ func Validate(req *plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorResponse, 
 		return &v.resp, err
 	}
 
+	err = v.parseParameters(req.GetParameter())
+	if err != nil {
+		return &v.resp, err
+	}
+
+	if v.gapic != nil {
+		v.compare()
+	}
+
 	for _, name := range req.GetFileToGenerate() {
 		rich, ok := v.files[name]
 		if !ok {
@@ -96,6 +107,7 @@ func Validate(req *plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorResponse, 
 type validator struct {
 	resp  plugin.CodeGeneratorResponse
 	files map[string]*desc.FileDescriptor
+	gapic *config.ConfigProto
 }
 
 // validate executes GAPIC configuration validation on the given
