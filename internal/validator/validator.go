@@ -65,7 +65,7 @@ var (
 		"cloudresourcemanager.googleapis.com/Project":      true,
 		"cloudresourcemanager.googleapis.com/Organization": true,
 		"cloudresourcemanager.googleapis.com/Folder":       true,
-		"cloud.googleapis.com/Location":                    true,
+		"locations.googleapis.com/Location":                true,
 		"cloudbilling.googleapis.com/BillingAccount":       true,
 	}
 )

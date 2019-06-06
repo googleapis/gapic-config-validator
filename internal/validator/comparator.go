@@ -176,6 +176,12 @@ func (v *validator) compareResourceRefs() {
 		}
 
 		for fname, ref := range ref.GetFieldEntityMap() {
+			// skip nested fields, presumably they are
+			// being validated in the origial msg
+			if strings.Contains(fname, ".") {
+				continue
+			}
+
 			field := msgDesc.FindFieldByName(fname)
 			if field == nil {
 				v.addError("Field %q does not exist on message %q per resource_name_generation item", fname, msgDesc.GetFullyQualifiedName())
@@ -199,7 +205,7 @@ func (v *validator) compareResourceRefs() {
 			}
 
 			t := strings.ToLower(typ[strings.Index(typ, "/")+1:])
-			if !wellKnownTypes[typ] || t != ref {
+			if !wellKnownTypes[typ] && t != ref {
 				v.addError("Field %q resource_type_kind %q doesn't match %q in config", field.GetFullyQualifiedName(), typ, ref)
 			}
 		}
