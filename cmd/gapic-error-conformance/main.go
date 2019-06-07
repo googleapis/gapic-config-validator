@@ -22,6 +22,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/golang/protobuf/ptypes/duration"
+
 	"google.golang.org/genproto/googleapis/api/annotations"
 	"google.golang.org/genproto/googleapis/longrunning"
 	"google.golang.org/genproto/googleapis/rpc/status"
@@ -392,6 +394,11 @@ func common() []*descriptor.FileDescriptorProto {
 		log.Fatal(err)
 	}
 
+	durDesc, err := desc.LoadMessageDescriptorForMessage(&duration.Duration{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return []*descriptor.FileDescriptorProto{
 		protoDesc.GetFile().AsFileDescriptorProto(),
 		annoDesc.GetFile().AsFileDescriptorProto(),
@@ -403,6 +410,7 @@ func common() []*descriptor.FileDescriptorProto {
 		resDesc.GetFile().AsFileDescriptorProto(),
 		fieldBehavDesc.GetFile().AsFileDescriptorProto(),
 		lroDesc.GetFile().AsFileDescriptorProto(),
+		durDesc.GetFile().AsFileDescriptorProto(),
 	}
 }
 
