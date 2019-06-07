@@ -22,16 +22,15 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/golang/protobuf/ptypes/duration"
-
 	"google.golang.org/genproto/googleapis/api/annotations"
 	"google.golang.org/genproto/googleapis/longrunning"
 	"google.golang.org/genproto/googleapis/rpc/status"
-
+	
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/googleapis/gapic-config-validator/internal/validator"
 	"github.com/jhump/protoreflect/desc"
