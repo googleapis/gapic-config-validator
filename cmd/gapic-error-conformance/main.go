@@ -25,11 +25,12 @@ import (
 	"google.golang.org/genproto/googleapis/api/annotations"
 	"google.golang.org/genproto/googleapis/longrunning"
 	"google.golang.org/genproto/googleapis/rpc/status"
-
+	
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/googleapis/gapic-config-validator/internal/validator"
 	"github.com/jhump/protoreflect/desc"
@@ -392,6 +393,11 @@ func common() []*descriptor.FileDescriptorProto {
 		log.Fatal(err)
 	}
 
+	durDesc, err := desc.LoadMessageDescriptorForMessage(&duration.Duration{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return []*descriptor.FileDescriptorProto{
 		protoDesc.GetFile().AsFileDescriptorProto(),
 		annoDesc.GetFile().AsFileDescriptorProto(),
@@ -403,6 +409,7 @@ func common() []*descriptor.FileDescriptorProto {
 		resDesc.GetFile().AsFileDescriptorProto(),
 		fieldBehavDesc.GetFile().AsFileDescriptorProto(),
 		lroDesc.GetFile().AsFileDescriptorProto(),
+		durDesc.GetFile().AsFileDescriptorProto(),
 	}
 }
 
