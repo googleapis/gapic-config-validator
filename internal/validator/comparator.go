@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"unicode"
 
 	"github.com/ghodss/yaml"
 	"github.com/golang/protobuf/jsonpb"
@@ -146,9 +147,11 @@ func (v *validator) compareResources(inter *config.InterfaceConfigProto) {
 				resDesc := eRes.(*annotations.ResourceDescriptor)
 
 				typ := resDesc.GetType()
-				typ = strings.ToLower(typ[strings.Index(typ, "/")+1:])
+				typ = typ[strings.Index(typ, "/")+1:]
 
-				if typ == res.GetEntityName() {
+				entName := snakeToCamel(res.GetEntityName())
+
+				if typ == entName {
 					if !containStr(resDesc.GetPattern(), res.GetNamePattern()) {
 						v.addError("resource definition for %q in %q does not have pattern %q",
 							resDesc.GetType(),
@@ -286,4 +289,23 @@ func (v *validator) parseParameters(p string) error {
 	}
 
 	return nil
+}
+
+// converts snake_case and SNAKE_CASE to CamelCase.
+//
+// copied from github.com/googleapis/gapic-generator-go
+func snakeToCamel(s string) string {
+	var sb strings.Builder
+	up := true
+	for _, r := range s {
+		if r == '_' {
+			up = true
+		} else if up {
+			sb.WriteRune(unicode.ToUpper(r))
+			up = false
+		} else {
+			sb.WriteRune(unicode.ToLower(r))
+		}
+	}
+	return sb.String()
 }
