@@ -63,6 +63,45 @@ protoc -I $COMMON_PROTO \
     a.proto b.proto
 ```
 
+### As a Bazel target
+
+In your WORKSPACE, include the project:
+```python
+http_archive(
+  name = "com_googleapis_gapic_config_validator",
+  strip_prefix = "gapic-config-validator-0.2.6",
+  urls = ["https://github.com/googleapis/gapic-config-validator/archive/v0.2.6.zip"],
+)
+
+load("@com_googleapis_gapic_config_validator//:repositories.bzl", "com_googleapis_gapic_config_validator_repositories")
+
+com_googleapis_gapic_config_validator_repositories()
+```
+
+In your BUILD file, configure the target:
+```python
+load("@com_googleapis_gapic_config_validator//:rules_validate/validate.bzl", "gapic_config_validation")
+
+gapic_config_validation(
+  name = "validate_acme_proto",
+  srcs = [":acme_proto"],
+)
+```
+
+The GAPIC v1 config comparison feature can be invoked with the `gapic_yaml` attribute:
+```python
+gapic_config_validation(
+  name = "validate_acme_proto",
+  srcs = [":acme_proto"],
+  gapic_yaml = ":acme_gapic.yaml"
+)
+```
+
+_Note: this feature will eventually be removed once the GAPIC v1 config is deprecated fully._
+
+A successful build means there are not issues or discrepancies. A failed build means there
+were findings to report, which are found on stderr.
+
 Conformance Testing
 -------------------
 
