@@ -90,8 +90,8 @@ def com_googleapis_gapic_config_validator_mod():
     go_repository(
         name = "org_golang_google_genproto",
         importpath = "google.golang.org/genproto",
-        sum = "h1:dnhIt8HlkxWTUDwTelzFnLXLXxbuq1AbZhTc7BDUGTo=",
-        version = "v0.0.0-20190819204819-24fa4b261c55",
+        sum = "h1:gSJIx1SDwno+2ElGhA4+qG2zF97qiUzTM+rQ0klBOcE=",
+        version = "v0.0.0-20190819201941-24fa4b261c55",
     )
     go_repository(
         name = "org_golang_google_grpc",
