@@ -151,6 +151,12 @@ func (v *validator) compareResources(inter *config.InterfaceConfigProto) {
 
 				entName := snakeToCamel(res.GetEntityName())
 
+				// the pattern is defined in a resource named differently than the
+				// name_pattern value, which is OK.
+				if containStr(resDesc.GetPattern(), res.GetNamePattern()) {
+					goto Next
+				}
+
 				if typ == entName {
 					if !containStr(resDesc.GetPattern(), res.GetNamePattern()) {
 						v.addError("resource definition for %q in %q does not have pattern %q",
@@ -207,8 +213,9 @@ func (v *validator) compareResourceRefs() {
 				continue
 			}
 
-			t := strings.ToLower(typ[strings.Index(typ, "/")+1:])
-			if !wellKnownTypes[typ] && t != ref {
+			// compare using upper camel case names
+			t := typ[strings.Index(typ, "/")+1:]
+			if !wellKnownTypes[typ] && t != snakeToCamel(ref) {
 				v.addError("Field %q resource_type_kind %q doesn't match %q in config", field.GetFullyQualifiedName(), typ, ref)
 			}
 		}
