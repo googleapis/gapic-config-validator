@@ -23,6 +23,13 @@ var (
 		"projects/{project}/locations/{location}": true,
 		"billingAccounts/{billing_account_id}":    true,
 	}
+
+	wellKnownNames = map[string]bool{
+		"project":      true,
+		"organization": true,
+		"folder":       true,
+		"location":     true,
+	}
 )
 
 func (v *validator) compare() {
@@ -154,7 +161,7 @@ Behavior:
 
 func (v *validator) compareResources(inter *config.InterfaceConfigProto) {
 	for _, res := range inter.GetCollections() {
-		if wellKnownPatterns[res.GetNamePattern()] {
+		if wellKnownPatterns[res.GetNamePattern()] || wellKnownNames[res.GetEntityName()] {
 			continue
 		}
 
