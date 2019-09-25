@@ -106,11 +106,11 @@ LRO:
 		}
 
 		// trim to local message name
-		protoMeta := info.GetResponseType()
+		protoMeta := info.GetMetadataType()
 		if strings.Contains(protoMeta, ".") {
 			protoMeta = protoMeta[strings.LastIndex(protoMeta, ".")+1:]
 		}
-		gapicMeta := lro.GetReturnType()
+		gapicMeta := lro.GetMetadataType()
 		if strings.Contains(gapicMeta, ".") {
 			gapicMeta = gapicMeta[strings.LastIndex(gapicMeta, ".")+1:]
 		}
