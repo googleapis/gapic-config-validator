@@ -94,7 +94,7 @@ LRO:
 			protoRes = protoRes[strings.LastIndex(protoRes, ".")+1:]
 		}
 		gapicRes := lro.GetReturnType()
-		if strings.Contains(protoRes, ".") {
+		if strings.Contains(gapicRes, ".") {
 			gapicRes = gapicRes[strings.LastIndex(gapicRes, ".")+1:]
 		}
 
@@ -105,11 +105,21 @@ LRO:
 				gapicRes)
 		}
 
-		if info.GetMetadataType() != lro.GetMetadataType() {
+		// trim to local message name
+		protoMeta := info.GetMetadataType()
+		if strings.Contains(protoMeta, ".") {
+			protoMeta = protoMeta[strings.LastIndex(protoMeta, ".")+1:]
+		}
+		gapicMeta := lro.GetMetadataType()
+		if strings.Contains(gapicMeta, ".") {
+			gapicMeta = gapicMeta[strings.LastIndex(gapicMeta, ".")+1:]
+		}
+
+		if protoMeta != gapicMeta {
 			v.addError("Method %q operation_info.metadata_type %q does not match %q",
 				fqn,
-				info.GetMetadataType(),
-				lro.GetMetadataType())
+				protoMeta,
+				gapicMeta)
 		}
 	}
 
