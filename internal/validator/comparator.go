@@ -88,11 +88,21 @@ LRO:
 		}
 		info := eLRO.(*longrunning.OperationInfo)
 
-		if info.GetResponseType() != lro.GetReturnType() {
+		// trim to local message name
+		protoRes := info.GetResponseType()
+		if strings.Contains(protoRes, ".") {
+			protoRes = protoRes[strings.LastIndex(protoRes, ".")+1:]
+		}
+		gapicRes := lro.GetReturnType()
+		if strings.Contains(protoRes, ".") {
+			gapicRes = gapicRes[strings.LastIndex(gapicRes, ".")+1:]
+		}
+
+		if protoRes != gapicRes {
 			v.addError("Method %q operation_info.response_type %q does not match %q",
 				fqn,
-				info.GetResponseType(),
-				lro.GetReturnType())
+				protoRes,
+				gapicRes)
 		}
 
 		if info.GetMetadataType() != lro.GetMetadataType() {
