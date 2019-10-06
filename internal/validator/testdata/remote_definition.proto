@@ -19,7 +19,12 @@ package definition;
 import "google/api/client.proto";
 import "google/api/resource.proto";
 
-option go_package = "github.com/googleapis/gapic-config-validator/internal/validator/testdata;testdata";
+option go_package = "internal/validator/testdata;testdata";
+
+option (google.api.resource_definition) = {
+  type: "foobar.api.com/FooBarBaz"
+  pattern: "projects/{project}/foos/{foo}/bars/{bar}/bazs/{baz}"
+};
 
 service FooBarService {
   option (google.api.default_host) = "foobar.api.com";
