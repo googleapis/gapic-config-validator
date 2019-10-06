@@ -1,7 +1,7 @@
 .PHONY : image clean
 
 gen-testdata:
-	protoc -I ${COMMON_PROTOS} -I internal/validator/testdata --go_out=. internal/validator/testdata/*.proto
+	protoc -I ${COMMON_PROTO} -I internal/validator/testdata --go_out=. internal/validator/testdata/*.proto
 
 test:
 	go test ./...
