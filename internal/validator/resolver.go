@@ -51,10 +51,7 @@ func (v *validator) resolveResRefType(typ string, f *desc.FileDescriptor) *desc.
 			// resource_definitions are orphaned, no backing Message, fake one
 			name := typ[strings.Index(typ, "/")+1:]
 			field := builder.NewField("name", builder.FieldTypeString())
-			m, err := builder.NewMessage(name).AddField(field).Build()
-			if err != nil {
-				return nil
-			}
+			m, _ := builder.NewMessage(name).AddField(field).Build()
 
 			return m
 		}
