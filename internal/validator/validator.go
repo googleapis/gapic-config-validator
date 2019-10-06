@@ -256,6 +256,9 @@ func (v *validator) validateMessage(msg *desc.MessageDescriptor) {
 	}
 }
 
+// validateResourceDescriptor validates the resource_type_kind and pattern
+// presence of a given ResourceDescriptor for the owner with the
+// fully-qualified name fqn.
 func (v *validator) validateResourceDescriptor(res *annotations.ResourceDescriptor, fqn string) {
 	// missing resource.pattern
 	if len(res.GetPattern()) == 0 {
