@@ -61,11 +61,18 @@ func TestValidateFile(t *testing.T) {
 		t.Error(err)
 	}
 
+	fooBar, err := desc.LoadMessageDescriptorForMessage(&testdata.FooBar{})
+	if err != nil {
+		t.Error(err)
+	}
+	resDefFile := fooBar.GetFile()
+
 	for _, tst := range []struct {
 		name, want string
 		file       *desc.FileDescriptor
 	}{
 		{name: "missing default_host in Service", want: fmt.Sprintf("\n"+missingDefaultHost, missingServ.GetName()), file: missing},
+		{name: "valid file with resource_definition", want: "", file: resDefFile},
 	} {
 		v.validate(tst.file)
 

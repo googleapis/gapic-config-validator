@@ -6,6 +6,7 @@ import (
 	"google.golang.org/genproto/googleapis/api/annotations"
 
 	"github.com/jhump/protoreflect/desc"
+	"github.com/jhump/protoreflect/desc/builder"
 )
 
 // resolveResRefMessage finds the MessageDescriptor of a
@@ -39,6 +40,26 @@ func (v *validator) resolveResRefMessage(typ string, file *desc.FileDescriptor) 
 // resolveResRefType checks every message in the file
 // for one that is annotated with the resource type
 func (v *validator) resolveResRefType(typ string, f *desc.FileDescriptor) *desc.MessageDescriptor {
+	eResDef, err := ext(f.GetFileOptions(), annotations.E_ResourceDefinition)
+	if err == nil {
+		resDefs := eResDef.([]*annotations.ResourceDescriptor)
+		for _, res := range resDefs {
+			if typ != res.GetType() {
+				continue
+			}
+
+			// resource_definitions are orphaned, no backing Message, fake one
+			name := typ[strings.Index(typ, "/")+1:]
+			field := builder.NewField("name", builder.FieldTypeString())
+			m, err := builder.NewMessage(name).AddField(field).Build()
+			if err != nil {
+				return nil
+			}
+
+			return m
+		}
+	}
+
 	for _, m := range f.GetMessageTypes() {
 		eRes, err := ext(m.GetMessageOptions(), annotations.E_Resource)
 		if err != nil {

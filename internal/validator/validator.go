@@ -113,6 +113,15 @@ type validator struct {
 // validate executes GAPIC configuration validation on the given
 // rich file descriptor.
 func (v *validator) validate(file *desc.FileDescriptor) {
+	opts := file.GetFileOptions()
+	eResDef, err := ext(opts, annotations.E_ResourceDefinition)
+	if err == nil {
+		resDefs := eResDef.([]*annotations.ResourceDescriptor)
+		for _, res := range resDefs {
+			v.validateResourceDescriptor(res, res.GetType())
+		}
+	}
+
 	// validate Services
 	for _, serv := range file.GetServices() {
 		v.validateService(serv)
@@ -226,23 +235,7 @@ func (v *validator) validateMessage(msg *desc.MessageDescriptor) {
 	if eRes, err := ext(msg.GetMessageOptions(), annotations.E_Resource); err == nil {
 		res := eRes.(*annotations.ResourceDescriptor)
 
-		// missing resource.pattern
-		if len(res.GetPattern()) == 0 {
-			v.addError(resMissingPattern, msg.GetFullyQualifiedName())
-		}
-
-		// missing resource.type
-		if typ := res.GetType(); typ == "" {
-			v.addError(resMissingType, msg.GetFullyQualifiedName())
-		} else {
-			// validate resource.type format
-			if split := strings.Split(typ, "/"); len(split) != 2 {
-				v.addError(resInvalidTypeFormat, msg.GetFullyQualifiedName())
-			} else {
-				typ = split[1]
-				v.validateRescTypeKind(typ, msg)
-			}
-		}
+		v.validateResourceDescriptor(res, msg.GetFullyQualifiedName())
 
 		fname := "name"
 		if n := res.GetNameField(); n != "" {
@@ -263,15 +256,38 @@ func (v *validator) validateMessage(msg *desc.MessageDescriptor) {
 	}
 }
 
+func (v *validator) validateResourceDescriptor(res *annotations.ResourceDescriptor, fqn string) {
+	// missing resource.pattern
+	if len(res.GetPattern()) == 0 {
+		v.addError(resMissingPattern, fqn)
+	}
+
+	// missing resource.type
+	typ := res.GetType()
+	if typ == "" {
+		v.addError(resMissingType, fqn)
+		return
+	}
+
+	// validate resource.type format
+	split := strings.Split(typ, "/")
+	if len(split) != 2 {
+		v.addError(resInvalidTypeFormat, fqn)
+		return
+	}
+
+	v.validateRescTypeKind(split[1], fqn)
+}
+
 // validateRescTypeKind ensures that the resource_type_kind component
 // of a resource.type conforms to the required format and length.
-func (v *validator) validateRescTypeKind(rtk string, msg *desc.MessageDescriptor) {
+func (v *validator) validateRescTypeKind(rtk, fqn string) {
 	if !resourceTypeKindRegexp.MatchString(rtk) {
 		v.addError(resTypeKindInvalid, rtk)
 	}
 
 	if len(rtk) > maxCharRescTypeKind {
-		v.addError(resTypeKindTooLong, msg.GetFullyQualifiedName(), maxCharRescTypeKind)
+		v.addError(resTypeKindTooLong, fqn, maxCharRescTypeKind)
 	}
 }
 
