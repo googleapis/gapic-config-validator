@@ -89,11 +89,16 @@ func (v *validator) resolveMsgReference(name string, file *desc.FileDescriptor) 
 		}
 	}
 
-	// this Message must be imported, check validator's file set.
-	// Iterating over the entire set isn't ideal, but necessary
+	// this Message must be imported or in a different file, check validator's
+	// file set. Iterating over the entire set isn't ideal, but necessary
 	// when searching for single message name in all protos
+	target := name
 	for _, f := range v.files {
-		if msg := f.FindMessage(name); msg != nil {
+		if !strings.Contains(name, ".") {
+			target = f.GetPackage() + "." + name
+		}
+
+		if msg := f.FindMessage(target); msg != nil {
 			return msg
 		}
 	}
