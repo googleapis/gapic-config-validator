@@ -30,6 +30,12 @@ var (
 		"folder":       true,
 		"location":     true,
 	}
+
+	isIamMethod = map[string]bool{
+		"GetIamPolicy":       true,
+		"SetIamPolicy":       true,
+		"TestIamPermissions": true,
+	}
 )
 
 func (v *validator) compare() {
@@ -67,6 +73,11 @@ func (v *validator) compareServices() {
 func (v *validator) compareMethod(methodDesc *desc.MethodDescriptor, method *config.MethodConfigProto) {
 	fqn := methodDesc.GetFullyQualifiedName()
 	mOpts := methodDesc.GetMethodOptions()
+
+	// ignore IAM methods
+	if isIamMethod[method.GetName()] {
+		return
+	}
 
 	// compare method_signatures & flattening groups
 	if flattenings := method.GetFlattening(); flattenings != nil {
@@ -205,6 +216,11 @@ func (v *validator) compareResources(inter *config.InterfaceConfigProto) {
 
 func (v *validator) compareResourceRefs() {
 	for _, ref := range v.gapic.GetResourceNameGeneration() {
+		// skip IAM messages
+		if strings.HasPrefix(ref.GetMessageName(), "google.iam.v1") {
+			continue
+		}
+
 		msgDesc := v.resolveMsgByLocalName(ref.GetMessageName())
 		if msgDesc == nil {
 			v.addError("Message %q in resource_name_generation item does not exist", ref.GetMessageName())
@@ -224,19 +240,48 @@ func (v *validator) compareResourceRefs() {
 				continue
 			}
 
-			var typ string
+			var typ, child string
 			if eResRef, err := ext(field.GetFieldOptions(), annotations.E_ResourceReference); err == nil {
 				resRef := eResRef.(*annotations.ResourceReference)
 
 				typ = resRef.GetType()
-				if typ == "" {
-					typ = resRef.GetChildType()
-				}
+				child = resRef.GetChildType()
 			} else if eRes, err := ext(msgDesc.GetMessageOptions(), annotations.E_Resource); err == nil {
 				res := eRes.(*annotations.ResourceDescriptor)
 				typ = res.GetType()
 			} else {
 				v.addError("Field %q missing resource_reference to %q", field.GetFullyQualifiedName(), ref)
+				continue
+			}
+
+			// use child_type instead
+			if typ == "" {
+				childMsg := v.resolveResRefMessage(child, msgDesc.GetFile())
+				if childMsg == nil {
+					v.addError("child_type %q on %q is not a defined resource", child, field.GetFullyQualifiedName())
+					continue
+				}
+
+				refItem := v.resolveRefFromCollections(ref)
+				if refItem == nil {
+					v.addError("entity_name %q is not a defined in any available collection", ref)
+				}
+
+				if eResDef, err := ext(childMsg.GetMessageOptions(), annotations.E_Resource); err == nil {
+					var found bool
+					resDef := eResDef.(*annotations.ResourceDescriptor)
+					for _, pattern := range resDef.GetPattern() {
+						if strings.HasPrefix(pattern, refItem.GetNamePattern()) {
+							found = true
+							break
+						}
+					}
+
+					if !found {
+						v.addError("Field %q child_type %q isn't a proper child of %q in GAPIC config", field.GetFullyQualifiedName(), child, ref)
+					}
+				}
+
 				continue
 			}
 
@@ -285,6 +330,24 @@ func (v *validator) resolveMsgByLocalName(name string) *desc.MessageDescriptor {
 
 		if m := f.FindMessage(fqn); m != nil {
 			return m
+		}
+	}
+
+	return nil
+}
+
+func (v *validator) resolveRefFromCollections(name string) *config.CollectionConfigProto {
+	for _, item := range v.gapic.GetCollections() {
+		if item.GetEntityName() == name {
+			return item
+		}
+	}
+
+	for _, inter := range v.gapic.GetInterfaces() {
+		for _, item := range inter.GetCollections() {
+			if item.GetEntityName() == name {
+				return item
+			}
 		}
 	}
 
