@@ -172,11 +172,33 @@ Behavior:
 
 func (v *validator) compareResources(inter *config.InterfaceConfigProto) {
 	for _, res := range inter.GetCollections() {
-		if wellKnownPatterns[res.GetNamePattern()] || wellKnownNames[res.GetEntityName()] {
+		ent := snakeToCamel(res.GetEntityName())
+		pat := res.GetNamePattern()
+		if wellKnownPatterns[pat] || wellKnownNames[ent] {
 			continue
 		}
 
 		for _, f := range v.files {
+			// check file for resource_definition annotations
+			eResDef, err := ext(f.GetFileOptions(), annotations.E_ResourceDefinition)
+			if err == nil {
+				resDefs := eResDef.([]*annotations.ResourceDescriptor)
+				for _, res := range resDefs {
+					typ := res.GetType()
+					typ = typ[strings.Index(typ, "/")+1:]
+
+					if ent == typ {
+						if !containStr(res.GetPattern(), pat) {
+							v.addError("resource definition for %q in %q does not have pattern %q",
+								res.GetType(),
+								f.GetFullyQualifiedName(),
+								pat)
+						}
+						goto NextCollectionItem
+					}
+				}
+			}
+
 			for _, m := range f.GetMessageTypes() {
 				eRes, err := ext(m.GetMessageOptions(), annotations.E_Resource)
 				if err != nil {
@@ -187,30 +209,28 @@ func (v *validator) compareResources(inter *config.InterfaceConfigProto) {
 				typ := resDesc.GetType()
 				typ = typ[strings.Index(typ, "/")+1:]
 
-				entName := snakeToCamel(res.GetEntityName())
-
 				// the pattern is defined in a resource named differently than the
 				// name_pattern value, which is OK.
-				if containStr(resDesc.GetPattern(), res.GetNamePattern()) {
-					goto Next
+				if containStr(resDesc.GetPattern(), pat) {
+					goto NextCollectionItem
 				}
 
-				if typ == entName {
-					if !containStr(resDesc.GetPattern(), res.GetNamePattern()) {
+				if typ == ent {
+					if !containStr(resDesc.GetPattern(), pat) {
 						v.addError("resource definition for %q in %q does not have pattern %q",
 							resDesc.GetType(),
 							m.GetFullyQualifiedName(),
-							res.GetNamePattern())
+							pat)
 					}
 
-					goto Next
+					goto NextCollectionItem
 				}
 			}
 		}
 
 		v.addError("No corresponding resource definition for %q: %q", res.GetEntityName(), res.GetNamePattern())
 
-	Next:
+	NextCollectionItem:
 	}
 }
 
