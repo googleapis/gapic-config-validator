@@ -6,6 +6,6 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/golang/protobuf v1.3.2
 	github.com/jhump/protoreflect v1.5.0
-	google.golang.org/genproto v0.0.0-20191203145615-049a07e0debe
+	google.golang.org/genproto v0.0.0-20191203220235-3fa9dbf08042
 	gopkg.in/yaml.v2 v2.2.4 // indirect
 )
