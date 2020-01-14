@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 	"unicode"
 
@@ -199,7 +200,16 @@ func (v *validator) compareResources(inter *config.InterfaceConfigProto) {
 				}
 			}
 
-			for _, m := range f.GetMessageTypes() {
+			// Collect all messages types defined in the file, including
+			// nested messages.
+			msgs := f.GetMessageTypes()
+			for _, m := range msgs {
+				if nested := m.GetNestedMessageTypes(); len(nested) > 0 {
+					msgs = append(msgs, nested...)
+				}
+			}
+
+			for _, m := range msgs {
 				eRes, err := ext(m.GetMessageOptions(), annotations.E_Resource)
 				if err != nil {
 					continue
@@ -256,7 +266,7 @@ func (v *validator) compareResourceRefs() {
 
 			field := msgDesc.FindFieldByName(fname)
 			if field == nil {
-				v.addError("Field %q does not exist on message %q per resource_name_generation item", fname, msgDesc.GetFullyQualifiedName())
+				fmt.Fprintf(os.Stderr, "WARNING: Field %q does not exist on message %q per resource_name_generation item\n", fname, msgDesc.GetFullyQualifiedName())
 				continue
 			}
 
