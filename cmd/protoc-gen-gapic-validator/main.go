@@ -30,7 +30,7 @@ func main() {
 		log.Fatal(err)
 	}
 	var req plugin.CodeGeneratorRequest
-	if err := req.Unmarshal(reqBytes); err != nil {
+	if err := proto.Unmarshal(reqBytes, &req); err != nil {
 		log.Fatal(err)
 	}
 
