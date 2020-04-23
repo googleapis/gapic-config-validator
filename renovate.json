@@ -9,5 +9,11 @@
   },
   "assignees": [
     "noahdietz"
+  ],
+  "packageRules": [
+    {
+      "updateTypes": ["minor", "patch", "digest"],
+      "automerge": true
+    }
   ]
 }
