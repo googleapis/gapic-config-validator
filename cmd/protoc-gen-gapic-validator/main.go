@@ -38,6 +38,7 @@ func main() {
 	if err != nil {
 		resp.Error = proto.String(err.Error())
 	}
+	resp.SupportedFeatures = proto.Uint64(uint64(plugin.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL))
 
 	outBytes, err := proto.Marshal(resp)
 	if err != nil {
