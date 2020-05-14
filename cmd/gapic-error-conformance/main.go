@@ -64,7 +64,7 @@ func main() {
 	var failed bool
 	for _, s := range scenarios {
 		if verbose {
-			log.Printf("=== Scenario: %s ===", s.name)
+			fmt.Printf("=== Scenario: %s ===\n", s.name)
 		}
 		// execute CodeGeneratorRequest with both plugins
 		vResp, pResp, err := gen(s.req)
@@ -74,8 +74,8 @@ func main() {
 		verr := vResp.GetError()
 		perr := pResp.GetError()
 		if verbose {
-			log.Println("validator:", strings.TrimSpace(verr))
-			log.Println("plugin:   ", strings.TrimSpace(perr))
+			fmt.Println("validator:", strings.TrimSpace(verr))
+			fmt.Println("plugin:   ", strings.TrimSpace(perr))
 			fmt.Println()
 		}
 
@@ -128,7 +128,7 @@ func gen(req *plugin.CodeGeneratorRequest) (vResp, pResp *plugin.CodeGeneratorRe
 	}
 
 	if verbose && stderr.Len() > 0 {
-		log.Printf("plugin stderr: %s", string(stderr.Bytes()))
+		fmt.Printf("plugin stderr: %s\n", string(stderr.Bytes()))
 		fmt.Println()
 	}
 
