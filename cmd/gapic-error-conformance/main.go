@@ -15,6 +15,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"log"
@@ -25,7 +26,7 @@ import (
 	"google.golang.org/genproto/googleapis/api/annotations"
 	"google.golang.org/genproto/googleapis/longrunning"
 	"google.golang.org/genproto/googleapis/rpc/status"
-	
+
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
@@ -62,18 +63,24 @@ func main() {
 	// run conformance evaluation
 	var failed bool
 	for _, s := range scenarios {
+		if verbose {
+			fmt.Printf("=== Scenario: %s ===\n", s.name)
+		}
 		// execute CodeGeneratorRequest with both plugins
 		vResp, pResp, err := gen(s.req)
 		if err != nil {
 			log.Fatal(err)
 		}
+		verr := vResp.GetError()
+		perr := pResp.GetError()
 		if verbose {
-			log.Println("validator:", vResp.GetError())
-			log.Println("plugin:   ", pResp.GetError())
+			fmt.Println("validator:", strings.TrimSpace(verr))
+			fmt.Println("plugin:   ", strings.TrimSpace(perr))
+			fmt.Println()
 		}
 
 		// validator & plugin response error messages
-		if diff := compare(vResp.GetError(), pResp.GetError()); diff != nil {
+		if diff := compare(verr, perr); diff != nil {
 			fmt.Println()
 			fmt.Println(s.name, diff)
 			failed = true
@@ -88,6 +95,7 @@ func main() {
 // gen executes the CodeGeneratorRequest with the gapic-config-validator
 // and the plugin named via the -plugin flag, and returns both responses.
 func gen(req *plugin.CodeGeneratorRequest) (vResp, pResp *plugin.CodeGeneratorResponse, err error) {
+	var stderr bytes.Buffer
 	vResp, err = validator.Validate(req)
 	if err != nil {
 		log.Fatal(err)
@@ -104,6 +112,10 @@ func gen(req *plugin.CodeGeneratorRequest) (vResp, pResp *plugin.CodeGeneratorRe
 		log.Fatal(err)
 	}
 
+	if verbose {
+		cmd.Stderr = &stderr
+	}
+
 	_, err = in.Write(reqData)
 	if err != nil {
 		log.Fatal(err)
@@ -113,6 +125,11 @@ func gen(req *plugin.CodeGeneratorRequest) (vResp, pResp *plugin.CodeGeneratorRe
 	resData, err := cmd.Output()
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if verbose && stderr.Len() > 0 {
+		fmt.Printf("plugin stderr: %s\n", string(stderr.Bytes()))
+		fmt.Println()
 	}
 
 	pResp = &plugin.CodeGeneratorResponse{}
@@ -292,7 +309,7 @@ func buildProto(fopts *descriptor.FileOptions, sopts *descriptor.ServiceOptions,
 	}
 	fopts.GoPackage = proto.String("foo.com/bar/v1;bar")
 
-	file := builder.NewFile("foo.proto").SetPackageName("foo").SetOptions(fopts)
+	file := builder.NewFile("foo.proto").SetPackageName("foo.v1").SetOptions(fopts)
 
 	// when ServiceOptions is nil, set to default valid value
 	if sopts == nil {
