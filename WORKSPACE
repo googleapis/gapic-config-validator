@@ -21,4 +21,5 @@ gazelle_dependencies()
 
 load("//:repositories_go.bzl", "com_googleapis_gapic_config_validator_mod")
 
+# gazelle:repository_macro repositories_go.bzl%com_googleapis_gapic_config_validator_mod
 com_googleapis_gapic_config_validator_mod()
