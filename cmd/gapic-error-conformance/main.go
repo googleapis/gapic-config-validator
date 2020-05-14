@@ -309,7 +309,7 @@ func buildProto(fopts *descriptor.FileOptions, sopts *descriptor.ServiceOptions,
 	}
 	fopts.GoPackage = proto.String("foo.com/bar/v1;bar")
 
-	file := builder.NewFile("foo.proto").SetPackageName("foo").SetOptions(fopts)
+	file := builder.NewFile("foo.proto").SetPackageName("foo.v1").SetOptions(fopts)
 
 	// when ServiceOptions is nil, set to default valid value
 	if sopts == nil {
