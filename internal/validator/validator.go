@@ -185,10 +185,16 @@ func (v *validator) validateMethod(method *desc.MethodDescriptor) {
 
 		// validate each method signature entry
 		for _, sig := range sigs {
+			// allow empty string as a method signature value
+			if sig == "" {
+				continue
+			}
+
 			// individual method signatures are a comma-delimited string of fields
 			fields := strings.Split(sig, ",")
 
 			for _, field := range fields {
+				field = strings.TrimSpace(field)
 				f := input.FindFieldByName(field)
 
 				// nested field
