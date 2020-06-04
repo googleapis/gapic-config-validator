@@ -261,6 +261,8 @@ func TestValidateMethod_MethodSignature(t *testing.T) {
 		"bar.dne",       // invalid, nested field doesn't exist
 		"a,bar.b",       // valid w/nested
 		"bar.baz.biz",   // valid, last component is repeated
+		"a, bar.b",      // valid, with spaces
+		"",              // valid, empty
 	}
 
 	opts := &descriptor.MethodOptions{}
