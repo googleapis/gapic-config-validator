@@ -59,8 +59,6 @@ message Baz {
   string c = 1 [(google.api.resource_reference).type = ""];
 
   repeated Biz biz = 2;
-
-  string name = 3;
 }
 
 // Message with same name as a resource type for resolution testing.
