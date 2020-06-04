@@ -243,12 +243,24 @@ func (v *validator) validateMessage(msg *desc.MessageDescriptor) {
 
 		v.validateResourceDescriptor(res, msg.GetFullyQualifiedName())
 
+		var isSingleton bool
+		if pats := res.GetPattern(); len(pats) > 0 {
+			// Check the last segment of the first pattern for template
+			// variable "{" "}" wrappers. If none, it is a singleton.
+			pat := pats[0]
+			seg := pat[strings.LastIndex(pat, "/")+1:]
+			isSingleton = !strings.Contains(seg, "{") && !strings.Contains(seg, "}")
+		}
+
 		fname := "name"
 		if n := res.GetNameField(); n != "" {
 			fname = n
+			// Even if it is a singleton, if the name_field is set,
+			// the field must exist, so we disable the singleton exception.
+			isSingleton = false
 		}
 
-		if f := msg.FindFieldByName(fname); f == nil {
+		if f := msg.FindFieldByName(fname); f == nil && !isSingleton {
 			// missing resource name field
 			v.addError(resMissingNameField, msg.GetFullyQualifiedName())
 		}
