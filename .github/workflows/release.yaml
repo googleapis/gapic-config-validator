@@ -56,7 +56,7 @@ jobs:
         with:
           go-version: "1.13"
       - uses: actions/checkout@v2
-      # This project does not use these,  but we need them to build the
+      # This project does not use these deps,  but we need them to build the
       # binaries.
       #
       # Mousetrap is installed individually because it is needed for the
@@ -68,8 +68,8 @@ jobs:
           go get github.com/inconshreveable/mousetrap
       - name: Build for the ${{ matrix.osarch.os }}/${{ matrix.osarch.arch }} platform.
         run: |
-          gox -osarch ${{ matrix.osarch.os }}/${{ matrix.osarch.arch }} -output protoc-gen-gapic-validator ./cmd/protoc-gen-gapic-validator && \
-          gox -osarch ${{ matrix.osarch.os }}/${{ matrix.osarch.arch }} -output gapic-error-conformance ./cmd/gapic-error-conformance && \
+          gox -osarch ${{ matrix.osarch.os }}/${{ matrix.osarch.arch }} -output protoc-gen-gapic-validator ./cmd/protoc-gen-gapic-validator
+          gox -osarch ${{ matrix.osarch.os }}/${{ matrix.osarch.arch }} -output gapic-error-conformance ./cmd/gapic-error-conformance
           tar cvfz gapic-config-validator.tar.gz protoc-gen-gapic-validator gapic-error-conformance
       - name: Upload the ${{ matrix.osarch.os }}/${{ matrix.osarch.arch }} release.
         uses: actions/upload-release-asset@v1
