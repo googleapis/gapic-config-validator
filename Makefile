@@ -26,7 +26,4 @@ image:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ./cmd/protoc-gen-gapic-validator
 	docker build -t gcr.io/gapic-images/gapic-config-validator . 
 	rm protoc-gen-gapic-validator
-
-release:
-	./release.sh
 	
