@@ -7,6 +7,6 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/jhump/protoreflect v1.8.2
 	google.golang.org/genproto v0.0.0-20210624195500-8bfb893ecb84
-	google.golang.org/protobuf v1.27.0
+	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.2.4 // indirect
 )
