@@ -15,10 +15,10 @@ protobuf_deps()
 http_archive(
     name = "io_bazel_rules_go",
     urls = [
-        "https://github.com/bazelbuild/rules_go/archive/v0.28.0.zip",
+        "https://github.com/bazelbuild/rules_go/archive/v0.29.0.zip",
     ],
-    strip_prefix = "rules_go-0.28.0",
-    sha256 = "76bb826b13250982d662275de4d0cd1420d71c22bf94ca04113db59c7be18a56",
+    strip_prefix = "rules_go-0.29.0",
+    sha256 = "3ae57b41d31f7add95babb4b9cff431672b2eac3d97727f7472a634c4ff1fec2",
 )
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies", "go_register_toolchains")
