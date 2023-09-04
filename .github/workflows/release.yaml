@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     container: golang:1.13
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4
         with:
           fetch-depth: 0
       - name: Set version
@@ -55,7 +55,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: "1.13"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4
       # This project does not use these deps,  but we need them to build the
       # binaries.
       #
